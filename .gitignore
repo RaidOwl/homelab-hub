@@ -1,11 +1,48 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
 .env
+.env.local
+
+# Database
 *.db
+*.sqlite
+*.sqlite3
+data/
+
+# Node.js
 node_modules/
 dist/
+build/
+.vite/
+
+# Backend static (built frontend)
 backend/static/
-.venv/
-.claude/
+
+# Logs
+*.log
+logs/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Claude
+.claude/

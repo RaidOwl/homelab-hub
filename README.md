@@ -5,6 +5,7 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 ## Features
 
 - **Inventory Management** — Full CRUD for hardware, VMs, apps/services, storage, networks, and miscellaneous items
+- **Export/Import** — Backup and restore your entire inventory with one-click JSON export/import
 - **Network Visualization** — Interactive graph map showing relationships between infrastructure components (powered by Cytoscape.js)
 - **Documentation** — Hierarchical markdown-based docs with live preview and auto-save
 - **Cross-Entity Search** — Search across all inventory types from a single interface
@@ -18,6 +19,12 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 | Backend | Python 3.12, Flask 3, SQLAlchemy 2, Alembic |
 | Database | SQLite (default, configurable) |
 | Deployment | Docker, Docker Compose, Gunicorn |
+
+## Requirements
+
+- **Node.js 22+** (for frontend development)
+- **Python 3.12+** (for backend development)
+- **Docker** (optional, for containerized deployment)
 
 ## Quick Start (Docker)
 
@@ -41,7 +48,7 @@ pip install -r requirements.txt
 python wsgi.py
 ```
 
-The API server runs on `http://localhost:5000`.
+The API server runs on `http://localhost:5001`.
 
 ### Frontend
 
@@ -51,7 +58,7 @@ npm install
 npm run dev
 ```
 
-The dev server runs on `http://localhost:5173` with hot reload.
+The dev server runs on `http://localhost:3000` (or next available port) with hot reload.
 
 ### Database Migrations
 
@@ -73,6 +80,47 @@ Note: The app also calls `db.create_all()` on startup as a fallback for fresh da
 |----------|---------|-------------|
 | `DATABASE_URL` | `sqlite:///data/homelab-hub.db` | SQLAlchemy database URI |
 | `FLASK_ENV` | `production` | Flask environment |
+
+## Export & Import
+
+Backup and restore your entire inventory data including hardware, VMs, apps, storage, networks, misc items, and documents.
+
+### Using the UI (Recommended)
+
+Use the Export/Import buttons in the application header:
+
+- **Export**: Click the "Export Data" button to download a `homelab-export.json` file with all your data
+- **Import**: Click the "Import Data" button, select a JSON file, and upload it to replace all existing data
+
+**Warning**: Importing will clear all existing data before restoring from the file. Always keep a backup export before performing an import.
+
+### Using the API/CLI
+
+You can also use the API endpoints directly:
+
+**Export:**
+```bash
+curl -X GET http://localhost:5001/inventory/export -o export.json
+```
+
+**Import:**
+```bash
+curl -X POST http://localhost:5001/inventory/import \
+     -H "Content-Type: application/json" \
+     -d @export.json
+```
+
+**Using with Docker:**
+```bash
+# Export from running container
+docker exec -it <container_name> curl -X GET http://localhost:5001/inventory/export -o export.json
+
+# Import to a new container
+docker cp export.json <container_name>:/app/export.json
+docker exec -it <container_name> curl -X POST http://localhost:5001/inventory/import \
+     -H "Content-Type: application/json" \
+     -d @/app/export.json
+```
 
 ## Project Structure
 
@@ -110,7 +158,7 @@ All endpoints are prefixed with `/api/`.
 | Networks | `GET/POST /api/networks`, `GET/PUT/DELETE /api/networks/:id` |
 | Misc | `GET/POST /api/misc`, `GET/PUT/DELETE /api/misc/:id` |
 | Documents | `GET/POST /api/docs`, `GET/PUT/DELETE /api/docs/:id`, `PATCH /api/docs/:id/move` |
-| Inventory | `GET /api/inventory`, `GET /api/inventory/search?q=` |
+| Inventory | `GET /api/inventory`, `GET /api/inventory/search?q=`, `GET /api/inventory/export`, `POST /api/inventory/import` |
 | Map | `GET /api/map/graph`, `GET/PUT /api/map/layout`, `POST/DELETE /api/map/edges` |
 
 ## License
