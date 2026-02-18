@@ -28,7 +28,6 @@
       {#if viewMode === "map"}
         <MapControls 
           on:relayout={() => mapComponent?.relayout()} 
-          on:resetLayout={() => mapComponent?.resetLayout()} 
         />
       {/if}
     </div>

@@ -170,6 +170,12 @@
                 <span class="info-value">{selectedNodeDetails.ip_address || selectedNodeDetails.ip}</span>
               </div>
             {/if}
+            {#if selectedNodeDetails.mac_address}
+              <div class="info-item">
+                <span class="info-label">MAC Address:</span>
+                <span class="info-value">{selectedNodeDetails.mac_address}</span>
+              </div>
+            {/if}
             {#if selectedNodeDetails.os}
               <div class="info-item">
                 <span class="info-label">OS:</span>

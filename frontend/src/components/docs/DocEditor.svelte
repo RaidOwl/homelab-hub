@@ -15,13 +15,13 @@
   $: if (content !== localContent) {
     localContent = content;
     if (richTextEl && editorType === "richtext" && document.activeElement !== richTextEl) {
-      richTextEl.innerHTML = localContent || '<p><br></p>';
+      richTextEl.innerHTML = renderMarkdown(localContent);
     }
   }
 
   // Initialize richtext editor when it becomes available
   $: if (richTextEl && editorType === "richtext" && !richTextEl.innerHTML) {
-    richTextEl.innerHTML = localContent || '<p><br></p>';
+    richTextEl.innerHTML = renderMarkdown(localContent);
   }
 
   function handleInput(e) {
@@ -29,9 +29,59 @@
     onChange(localContent);
   }
 
+  // Convert HTML from rich text editor back to markdown
+  function htmlToMarkdown(html) {
+    if (!html || html === '<p><br></p>') return '';
+    
+    let markdown = html
+      // Preserve line breaks temporarily
+      .replace(/<br\s*\/?>/gi, '\n')
+      // Headers
+      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+      .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n')
+      // Bold and italic (handle nested combinations)
+      .replace(/<strong[^>]*><em[^>]*>(.*?)<\/em><\/strong>/gi, '***$1***')
+      .replace(/<em[^>]*><strong[^>]*>(.*?)<\/strong><\/em>/gi, '***$1***')
+      .replace(/<b[^>]*><i[^>]*>(.*?)<\/i><\/b>/gi, '***$1***')
+      .replace(/<i[^>]*><b[^>]*>(.*?)<\/b><\/i>/gi, '***$1***')
+      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+      .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+      .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+      .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+      .replace(/<u[^>]*>(.*?)<\/u>/gi, '$1') // Remove underline, not standard markdown
+      // Links
+      .replace(/<a[^>]*href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi, '[$2]($1)')
+      // Lists - unordered
+      .replace(/<ul[^>]*>(.*?)<\/ul>/gis, (match, list) => {
+        return list.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
+      })
+      // Lists - ordered
+      .replace(/<ol[^>]*>(.*?)<\/ol>/gis, (match, list) => {
+        let counter = 1;
+        return list.replace(/<li[^>]*>(.*?)<\/li>/gi, () => `${counter++}. $1\n`);
+      })
+      // Code blocks
+      .replace(/<pre[^>]*><code[^>]*>(.*?)<\/code><\/pre>/gis, '```\n$1\n```\n')
+      // Inline code
+      .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
+      // Blockquotes
+      .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n')
+      // Paragraphs
+      .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+      // Remove any remaining HTML tags
+      .replace(/<[^>]+>/g, '')
+      // Clean up excessive newlines
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    
+    return markdown;
+  }
+
   function handleRichTextInput() {
     if (richTextEl) {
-      localContent = richTextEl.innerHTML;
+      localContent = htmlToMarkdown(richTextEl.innerHTML);
       onChange(localContent);
     }
   }

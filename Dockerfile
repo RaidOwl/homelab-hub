@@ -1,17 +1,21 @@
 # ---- Stage 1: Build frontend ----
-FROM node:22-alpine AS frontend-build
+FROM node:24-alpine AS frontend-build
 WORKDIR /build
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm install
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
 COPY frontend/ ./
 RUN npm run build
 
 # ---- Stage 2: Production image ----
-FROM python:3.12-slim
+FROM python:3.14-alpine
 WORKDIR /app
 
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
+    uv pip install --system --compile-bytecode --no-cache-dir -r requirements.txt
+# bytecode compilation makes startup faster but the image bigger, see: https://docs.astral.sh/uv/pip/compatibility/#bytecode-compilation
 
 COPY backend/ .
 

@@ -9,6 +9,7 @@ class VM(BaseMixin, db.Model):
     name = db.Column(db.Text, nullable=False)
     hostname = db.Column(db.Text)
     ip_address = db.Column(db.Text)
+    mac_address = db.Column(db.Text)
     cpu_cores = db.Column(db.Integer)
     ram_gb = db.Column(db.Float)
     disk_gb = db.Column(db.Float)

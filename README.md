@@ -22,13 +22,13 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Svelte 4, Vite 5, Cytoscape.js, ByteMD, Pico CSS |
-| Backend | Python 3.12, Flask 3, SQLAlchemy 2, Alembic |
+| Backend | Python 3.14, Flask 3, SQLAlchemy 2, Alembic |
 | Database | SQLite (default, configurable) |
 | Deployment | Docker, Docker Compose, Gunicorn || Platforms | Linux (x86_64, ARM64), macOS, Windows |
 ## Requirements
 
-- **Node.js 22+** (for frontend development)
-- **Python 3.12+** (for backend development)
+- **Node.js 24+** (for frontend development)
+- **Python 3.14+** (for backend development)
 - **Docker** (optional, for containerized deployment)
 
 **Supported Platforms:**
@@ -77,8 +77,8 @@ Deploy Home Lab Hub directly on your system without Docker containers.
 
 ### Prerequisites
 
-- **Python 3.12+**
-- **Node.js 22+** 
+- **Python 3.14+**
+- **Node.js 24+** 
 - **pip** (Python package manager)
 - **npm** (Node package manager)
 - A web server (Nginx/Apache, optional for reverse proxy)
