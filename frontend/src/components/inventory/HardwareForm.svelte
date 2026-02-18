@@ -10,6 +10,9 @@
 </div>
 <div class="grid">
   <label>IP Address<input type="text" bind:value={item.ip_address} /></label>
+  <label>MAC Address<input type="text" bind:value={item.mac_address} placeholder="00:00:00:00:00:00" /></label>
+</div>
+<div class="grid">
   <label>OS<input type="text" bind:value={item.os} /></label>
 </div>
 <div class="grid">

@@ -34,12 +34,13 @@
   <label>IP Address<input type="text" bind:value={item.ip_address} /></label>
 </div>
 <div class="grid">
+  <label>MAC Address<input type="text" bind:value={item.mac_address} placeholder="00:00:00:00:00:00" /></label>
+  <label>OS<input type="text" bind:value={item.os} /></label>
+</div>
+<div class="grid">
   <label>CPU Cores<input type="number" bind:value={item.cpu_cores} /></label>
   <label>RAM (GB)<input type="number" step="0.1" bind:value={item.ram_gb} /></label>
   <label>Disk (GB)<input type="number" step="0.1" bind:value={item.disk_gb} /></label>
-</div>
-<div class="grid">
-  <label>OS<input type="text" bind:value={item.os} /></label>
 </div>
 <IconPicker bind:value={item.icon} />
 <label>Notes<textarea bind:value={item.notes} rows="3"></textarea></label>

@@ -8,9 +8,6 @@
   <button class="outline small" on:click={() => dispatch("relayout")}>
     Auto Layout
   </button>
-  <button class="outline secondary small" on:click={() => dispatch("resetLayout")}>
-    Reset Positions
-  </button>
 </div>
 
 <style>
