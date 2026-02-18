@@ -140,6 +140,8 @@ The application will automatically create the SQLite database at `data/homelab-h
 From the `backend/` directory:
 
 ```bash
+# to enable flask debug mode:
+export FLASK_DEBUG=true
 python wsgi.py
 ```
 
@@ -150,6 +152,8 @@ Access the application at `http://localhost:8000` (the built frontend files are 
 From the `backend/` directory, run Gunicorn:
 
 ```bash
+# to enable flask debug mode:
+export FLASK_DEBUG=true
 gunicorn -w 4 -b 127.0.0.1:5001 wsgi:app
 ```
 
