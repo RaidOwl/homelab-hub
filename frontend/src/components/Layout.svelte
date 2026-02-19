@@ -69,8 +69,11 @@
     document.getElementById('import-file-input').click();
   }
 
+  let lastMobile = null;
   function handleResize() {
     const mobile = window.innerWidth <= 768;
+    if (mobile === lastMobile) return;
+    lastMobile = mobile;
     isMobile.set(mobile);
 
     const sidebar = document.querySelector('nav.sidebar');
