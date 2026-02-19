@@ -167,7 +167,7 @@
               width: 48,
               height: 48,
               "text-wrap": "wrap",
-              "text-overflow-wrap": "anywhere",
+              "text-overflow-wrap": "whitespace",
               "text-max-width": "40px",
               "background-color": "#FFFFFF",
               "border-width": 2,
