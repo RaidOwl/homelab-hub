@@ -103,8 +103,8 @@
       <h1>Home Lab Hub</h1>
     </div>
     <div class="header-actions">
-      <button class="btn btn-primary" on:click={exportDatabase}>Export Data</button>
-      <button class="btn btn-secondary" on:click={triggerImport}>Import Data</button>
+      <button class="btn btn-primary" on:click={exportDatabase}>↑{$isMobile ? '' : ' Export Data'}</button>
+      <button class="btn btn-secondary" on:click={triggerImport}>↓{$isMobile ? '' : ' Import Data'}</button>
       <input id="import-file-input" type="file" accept=".json" style="display: none;" on:change={importDatabase} />
     </div>
   </header>
