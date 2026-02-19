@@ -19,6 +19,7 @@
   let newItem = {};
   let sortColumn = null;
   let sortDirection = 'asc';
+  let isCreating = false;
 
   const FORMS = {
     hardware: HardwareForm,
@@ -151,6 +152,7 @@
   }
 
   async function handleCreate() {
+    isCreating = true;
     try {
       await post(`/${type}`, newItem);
       addToast("Created successfully", "success");
@@ -159,6 +161,8 @@
       loadItems();
     } catch (e) {
       addToast(e.message, "error");
+    } finally {
+      isCreating = false;
     }
   }
 </script>
@@ -226,7 +230,9 @@
     <svelte:component this={FormComponent} bind:item={newItem} />
     
     <div class="form-actions">
-      <button type="submit" class="btn-primary">Create</button>
+      <button type="submit" class="btn-primary" disabled={isCreating}>
+        {isCreating ? 'Creating...' : 'Create'}
+      </button>
       <button type="button" class="btn-secondary" on:click={handleModalClose}>Cancel</button>
     </div>
   </form>
