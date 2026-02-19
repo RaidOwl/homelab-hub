@@ -295,6 +295,9 @@
     font-size: 0.7rem;
     opacity: 0.7;
   }
+  tbody tr {
+    min-width: 300px;
+  }
   tr.clickable {
     cursor: pointer;
   }
