@@ -1,5 +1,6 @@
 <script>
   import { location } from "svelte-spa-router";
+  import { slide } from "svelte/transition";
 
   const inventoryTypes = [
     { key: "hardware", label: "Hardware" },
@@ -26,17 +27,19 @@
   }
 </script>
 
-<nav class="sidebar">
+<nav class="sidebar open">
   <ul class="nav-list">
     <li class="section">
-      <div 
-        class="section-header" 
+      <div
+        class="section-header"
         class:active={isInventoryActive($location)}
         on:click={toggleInventory}
         on:keydown={(e) => e.key === 'Enter' && toggleInventory()}
         tabindex="0"
       >
-        <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span>
+        <span class="icon">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><g stroke-width="0"></g><g stroke-linecap="round" stroke-linejoin="round"></g><g><path d="m15.66 7-.91-2.68L8.62.85a1.28 1.28 0 0 0-1.24 0L1.25 4.32.34 7a1.24 1.24 0 0 0 .58 1.5l.33.18V11a1.25 1.25 0 0 0 .63 1l5.5 3.11a1.28 1.28 0 0 0 1.24 0l5.5-3.11a1.25 1.25 0 0 0 .63-1V8.68l.33-.18a1.24 1.24 0 0 0 .58-1.5zM10 9.87l-.48-1.28L14 6.13l.44 1.28zM8 1.94 13.46 5 8 8 2.54 5zM1.52 7.41 2 6.13l4.48 2.46L6 9.87zm1 1.95 4.25 2.32.62-1.84v3.87L2.5 11zM13.5 11l-4.88 2.71V9.84l.63 1.84 4.25-2.32z"></path></g></svg>
+        </span>
         <span class="section-title">Inventory</span>
         <span class="expand-icon">
           {#if inventoryExpanded}
@@ -47,7 +50,7 @@
         </span>
       </div>
       {#if inventoryExpanded}
-        <ul class="subsection">
+        <ul class="subsection" transition:slide={{ duration: 200 }}>
           {#each inventoryTypes as type}
             <li>
               <a
@@ -84,8 +87,7 @@
 
 <style>
   .sidebar {
-    width: 220px;
-    min-width: 220px;
+    width: 0;
     background: var(--pico-card-background-color, #1a1a2e);
     border-right: 1px solid var(--pico-muted-border-color, #333);
     display: flex;
@@ -96,8 +98,13 @@
     height: 100vh;
     position: sticky;
     top: 0;
+    transition: width 0.3s;
   }
-  
+
+  .sidebar.open {
+    width: 220px;
+  }
+
   .nav-list {
     list-style: none;
     padding: 0.5rem 0;
@@ -183,6 +190,7 @@
   }
   .section-title {
     flex: 1;
+    text-align: left;
   }
   .expand-icon {
     display: flex;
