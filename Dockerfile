@@ -24,8 +24,8 @@ COPY --from=frontend-build /build/dist/ /app/static/
 
 RUN mkdir -p /data
 
-# Make entrypoint script executable
-RUN chmod +x /app/docker-entrypoint.sh
+# Make entrypoint script executable and ensure Unix line endings
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 ENV DATABASE_URL=sqlite:////data/homelab-hub.db
 ENV FLASK_ENV=production
