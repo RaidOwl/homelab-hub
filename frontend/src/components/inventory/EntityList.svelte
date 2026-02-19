@@ -216,7 +216,7 @@
           {#each sorted as item (item.id)}
             <tr on:click={() => push(`/inventory/${type}/${item.id}`)} class="clickable">
               {#each columns as col}
-                <td data-label={label(col)}>{item[col] ?? "-"}</td>
+                <td data-label={label(col)}>{item[col] || "-"}</td>
               {/each}
               <td>
                 <div class="button-group">
