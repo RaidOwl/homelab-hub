@@ -151,6 +151,20 @@ npm run build
 
 The built frontend will be in the `frontend/dist/` directory.
 
+Next, copy the built files to the backend's static directory.
+
+**On Linux/macOS:**
+```bash
+mkdir -p ../backend/static
+cp -r dist/* ../backend/static/
+```
+
+**On Windows:**
+```powershell
+mkdir ..\backend\static
+xcopy dist\* ..\backend\static /E /I /Y
+```
+
 ### Step 4: Database Initialization
 
 From the `backend/` directory (with virtual environment activated):
@@ -172,7 +186,7 @@ From the `backend/` directory:
 python wsgi.py
 ```
 
-Access the application at `http://localhost:8000` (the built frontend files are served automatically).
+Access the application at `http://localhost:5001` (the built frontend files are served automatically).
 
 #### Option B: Production (Gunicorn + Reverse Proxy)
 
