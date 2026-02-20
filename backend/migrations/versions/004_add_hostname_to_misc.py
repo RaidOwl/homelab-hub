@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from utils.migration_helpers import add_column_if_not_exists
 
 revision: str = "004"
 down_revision: Union[str, None] = "003"
@@ -18,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Add hostname column to misc
-    op.add_column("misc", sa.Column("hostname", sa.Text, nullable=True))
+    add_column_if_not_exists("misc", sa.Column("hostname", sa.Text, nullable=True))
 
 
 def downgrade() -> None:

@@ -7,6 +7,7 @@ Create Date: 2026-02-18
 """
 from alembic import op
 import sqlalchemy as sa
+from utils.migration_helpers import add_column_if_not_exists
 
 
 # revision identifiers, used by Alembic.
@@ -18,10 +19,10 @@ depends_on = None
 
 def upgrade():
     # Add mac_address column to hardware table
-    op.add_column('hardware', sa.Column('mac_address', sa.Text(), nullable=True))
+    add_column_if_not_exists('hardware', sa.Column('mac_address', sa.Text(), nullable=True))
     
     # Add mac_address column to vms table
-    op.add_column('vms', sa.Column('mac_address', sa.Text(), nullable=True))
+    add_column_if_not_exists('vms', sa.Column('mac_address', sa.Text(), nullable=True))
 
 
 def downgrade():
