@@ -6,6 +6,7 @@ export const appStore = writable([]);
 export const storageStore = writable([]);
 export const networkStore = writable([]);
 export const miscStore = writable([]);
+export const isMobile = writable(false);
 
 export const activeDocId = writable(null);
 export const toasts = writable([]);

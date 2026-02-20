@@ -1,7 +1,7 @@
 <script>
   import { push } from "svelte-spa-router";
   import { get, post, del } from "../../lib/api.js";
-  import { addToast } from "../../lib/stores.js";
+  import { addToast, isMobile } from "../../lib/stores.js";
   import Modal from "../Modal.svelte";
   import HardwareForm from "./HardwareForm.svelte";
   import VmForm from "./VmForm.svelte";
@@ -96,15 +96,15 @@
     ? [...filtered].sort((a, b) => {
         let aVal = a[sortColumn];
         let bVal = b[sortColumn];
-        
+
         // Handle null/undefined values
         if (aVal == null) aVal = '';
         if (bVal == null) bVal = '';
-        
+
         // Convert to strings for comparison if not numbers
         if (typeof aVal === 'string') aVal = aVal.toLowerCase();
         if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-        
+
         // Compare
         if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
         if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
@@ -130,7 +130,7 @@
       // Remove id and update name
       delete duplicate.id;
       duplicate.name = `Copy of ${item.name}`;
-      
+
       // Create the duplicate
       await post(`/${type}`, duplicate);
       addToast("Duplicated successfully", "success");
@@ -161,6 +161,13 @@
       addToast(e.message, "error");
     }
   }
+  
+  function handleCardViewToggle() {
+    this.classList.toggle('outline');
+    const tableWrap = document.querySelector('.table-wrap');
+    const classAction = !this.classList.contains('outline') ? 'add' : 'remove';
+    tableWrap.classList[classAction]('card-view');
+  }
 </script>
 
 <div class="entity-list">
@@ -169,6 +176,7 @@
     <div class="actions">
       <input type="search" placeholder="Filter..." bind:value={search} />
       <button on:click={handleAddClick}>+ Add</button>
+      <button class="table-toggle" on:click={handleCardViewToggle}>Card View</button>
     </div>
   </div>
 
@@ -177,7 +185,27 @@
   {:else if filtered.length === 0}
     <p>No items found.</p>
   {:else}
-    <div class="table-wrap">
+    <div class="table-wrap card-view">
+      {#if $isMobile}
+        <div class="mobile-sort">
+          <select bind:value={sortColumn}>
+            <option value={null} disabled selected>Sort by...</option>
+            {#each columns as col}
+              <option value={col}>
+                {label(col)}
+              </option>
+            {/each}
+          </select>
+
+          <button
+            class="sort-direction"
+            on:click={() => sortBy(sortColumn)}
+            disabled={sortColumn === null}
+          >
+            {sortDirection === 'asc' ? '▲' : '▼'}
+          </button>
+        </div>
+      {/if}
       <table>
         <thead>
           <tr>
@@ -196,7 +224,7 @@
           {#each sorted as item (item.id)}
             <tr on:click={() => push(`/inventory/${type}/${item.id}`)} class="clickable">
               {#each columns as col}
-                <td>{item[col] ?? ""}</td>
+                <td data-label={label(col)}>{item[col] || "-"}</td>
               {/each}
               <td>
                 <div class="button-group">
@@ -216,15 +244,15 @@
   {/if}
 </div>
 
-<Modal 
-  isOpen={showCreateModal} 
+<Modal
+  isOpen={showCreateModal}
   title={modalTitle}
   maxWidth="700px"
   on:close={handleModalClose}
 >
   <form on:submit|preventDefault={handleCreate}>
     <svelte:component this={FormComponent} bind:item={newItem} />
-    
+
     <div class="form-actions">
       <button type="submit" class="btn-primary">Create</button>
       <button type="button" class="btn-secondary" on:click={handleModalClose}>Cancel</button>
@@ -275,6 +303,9 @@
     font-size: 0.7rem;
     opacity: 0.7;
   }
+  tbody tr {
+    min-width: 300px;
+  }
   tr.clickable {
     cursor: pointer;
   }
@@ -290,12 +321,12 @@
     gap: 0.5rem;
     justify-content: flex-end;
   }
-  
+
   form {
     display: flex;
     flex-direction: column;
   }
-  
+
   .form-actions {
     display: flex;
     gap: 0.5rem;
@@ -303,7 +334,7 @@
     padding-top: 1.5rem;
     border-top: 1px solid #444;
   }
-  
+
   .btn-primary {
     padding: 0.5rem 1rem;
     background: #4a9eff;
@@ -313,11 +344,11 @@
     cursor: pointer;
     font-size: 0.9rem;
   }
-  
+
   .btn-primary:hover {
     background: #3a8eef;
   }
-  
+
   .btn-secondary {
     padding: 0.5rem 1rem;
     background: #444;
@@ -327,18 +358,76 @@
     cursor: pointer;
     font-size: 0.9rem;
   }
-  
+
   .btn-secondary:hover {
     background: #555;
   }
-  
+
   .btn-delete {
     background: rgba(220, 53, 69, 0.15) !important;
     border-color: rgba(220, 53, 69, 0.3) !important;
   }
-  
+
   .btn-delete:hover {
     background: rgba(220, 53, 69, 0.25) !important;
     border-color: rgba(220, 53, 69, 0.5) !important;
+  }
+  
+  .table-toggle, .mobile-sort { display: none; }
+
+  .card-view .mobile-sort {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .card-view .sort-direction {
+    margin: 0;
+    white-space: nowrap;
+    margin-bottom: var(--pico-spacing);
+  }
+
+  @media (max-width: 768px) {
+    .list-header {
+      gap: 1.5rem;
+    }
+    .list-header h2 {
+      flex: 1;
+      text-align: center;
+    }
+    
+    .actions input {
+      max-width: unset;
+      flex: 1;
+    }
+    
+    .table-toggle { display: block; }
+    .card-view table,
+    .card-view tbody,
+    .card-view th,
+    .card-view td,
+    .card-view tr { display: block; }
+    .card-view thead { display: none; }
+    .card-view tr {
+      margin-bottom: 1em;
+      border: 3px solid var(--pico-table-border-color);
+      border-radius: 0.5em;
+    }
+    .card-view td {
+      position: relative;
+      padding-left: 50%;
+      border: none;
+      border-bottom: var(--pico-border-width) solid var(--pico-table-border-color);
+    }
+    .card-view td:last-child {
+      border-bottom: none;
+    }
+    .card-view td::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 0;
+      width: 45%;
+      padding-left: 0.5em;
+      font-weight: bold;
+    }
   }
 </style>
