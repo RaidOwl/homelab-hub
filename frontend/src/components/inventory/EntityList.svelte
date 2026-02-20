@@ -279,7 +279,7 @@
   }
   .actions input {
     margin: 0;
-    flex: 1;
+    max-width: 200px;
   }
   .actions button {
     margin: 0;
@@ -393,6 +393,11 @@
     .list-header h2 {
       flex: 1;
       text-align: center;
+    }
+    
+    .actions input {
+      max-width: unset;
+      flex: 1;
     }
     
     .table-toggle { display: block; }
