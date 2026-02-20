@@ -7,6 +7,7 @@ Create Date: 2026-02-15
 """
 from alembic import op
 import sqlalchemy as sa
+from utils.migration_helpers import add_column_if_not_exists
 
 
 # revision identifiers, used by Alembic.
@@ -18,7 +19,7 @@ depends_on = None
 
 def upgrade():
     # Add https column to apps table
-    op.add_column('apps', sa.Column('https', sa.Boolean(), nullable=True, server_default='0'))
+    add_column_if_not_exists('apps', sa.Column('https', sa.Boolean(), nullable=True, server_default='0'))
 
 
 def downgrade():

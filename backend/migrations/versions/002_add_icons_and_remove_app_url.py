@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from utils.migration_helpers import add_column_if_not_exists
 
 revision: str = "002"
 down_revision: Union[str, None] = "001"
@@ -18,23 +19,23 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Add icon column to hardware
-    op.add_column("hardware", sa.Column("icon", sa.Text, nullable=True))
+    add_column_if_not_exists("hardware", sa.Column("icon", sa.Text, nullable=True))
     
     # Add icon column to vms
-    op.add_column("vms", sa.Column("icon", sa.Text, nullable=True))
+    add_column_if_not_exists("vms", sa.Column("icon", sa.Text, nullable=True))
     
     # Add icon column to apps and remove url column
-    op.add_column("apps", sa.Column("icon", sa.Text, nullable=True))
+    add_column_if_not_exists("apps", sa.Column("icon", sa.Text, nullable=True))
     op.drop_column("apps", "url")
     
     # Add icon column to storage
-    op.add_column("storage", sa.Column("icon", sa.Text, nullable=True))
+    add_column_if_not_exists("storage", sa.Column("icon", sa.Text, nullable=True))
     
     # Add color column to networks
-    op.add_column("networks", sa.Column("color", sa.Text, nullable=True))
+    add_column_if_not_exists("networks", sa.Column("color", sa.Text, nullable=True))
     
     # Add icon column to misc
-    op.add_column("misc", sa.Column("icon", sa.Text, nullable=True))
+    add_column_if_not_exists("misc", sa.Column("icon", sa.Text, nullable=True))
 
 
 def downgrade() -> None:

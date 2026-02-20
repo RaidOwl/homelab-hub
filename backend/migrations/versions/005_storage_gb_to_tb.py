@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from utils.migration_helpers import add_column_if_not_exists
 
 revision: str = "005"
 down_revision: Union[str, None] = "004"
@@ -23,8 +24,8 @@ def upgrade() -> None:
     # 3. Drop old columns
     
     # Add new TB columns
-    op.add_column("storage", sa.Column("raw_space_tb", sa.Float, nullable=True))
-    op.add_column("storage", sa.Column("usable_space_tb", sa.Float, nullable=True))
+    add_column_if_not_exists("storage", sa.Column("raw_space_tb", sa.Float, nullable=True))
+    add_column_if_not_exists("storage", sa.Column("usable_space_tb", sa.Float, nullable=True))
     
     # Convert GB to TB (divide by 1024)
     op.execute("""
@@ -45,8 +46,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Add back GB columns
-    op.add_column("storage", sa.Column("raw_space_gb", sa.Float, nullable=True))
-    op.add_column("storage", sa.Column("usable_space_gb", sa.Float, nullable=True))
+    add_column_if_not_exists("storage", sa.Column("raw_space_gb", sa.Float, nullable=True))
+    add_column_if_not_exists("storage", sa.Column("usable_space_gb", sa.Float, nullable=True))
     
     # Convert TB back to GB (multiply by 1024)
     op.execute("""
