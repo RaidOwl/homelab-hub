@@ -161,6 +161,13 @@
       addToast(e.message, "error");
     }
   }
+  
+  function handleCardViewToggle() {
+    this.classList.toggle('outline');
+    const tableWrap = document.querySelector('.table-wrap');
+    const classAction = !this.classList.contains('outline') ? 'add' : 'remove';
+    tableWrap.classList[classAction]('card-view');
+  }
 </script>
 
 <div class="entity-list">
@@ -169,6 +176,7 @@
     <div class="actions">
       <input type="search" placeholder="Filter..." bind:value={search} />
       <button on:click={handleAddClick}>+ Add</button>
+      <button class="table-toggle" on:click={handleCardViewToggle}>Card View</button>
     </div>
   </div>
 
@@ -177,7 +185,7 @@
   {:else if filtered.length === 0}
     <p>No items found.</p>
   {:else}
-    <div class="table-wrap">
+    <div class="table-wrap card-view">
       {#if $isMobile}
         <div class="mobile-sort">
           <select bind:value={sortColumn}>
@@ -271,7 +279,7 @@
   }
   .actions input {
     margin: 0;
-    max-width: 200px;
+    flex: 1;
   }
   .actions button {
     margin: 0;
@@ -364,36 +372,51 @@
     background: rgba(220, 53, 69, 0.25) !important;
     border-color: rgba(220, 53, 69, 0.5) !important;
   }
+  
+  .table-toggle, .mobile-sort { display: none; }
 
-  .mobile-sort {
+  .card-view .mobile-sort {
     display: flex;
     gap: 1rem;
   }
 
-  .sort-direction {
+  .card-view .sort-direction {
     margin: 0;
     white-space: nowrap;
     margin-bottom: var(--pico-spacing);
   }
 
   @media (max-width: 768px) {
-    table, thead, tbody, th, td, tr { display: block; }
-    thead { display: none; }
-    tr {
+    .list-header {
+      gap: 1.5rem;
+    }
+    .list-header h2 {
+      flex: 1;
+      text-align: center;
+    }
+    
+    .table-toggle { display: block; }
+    .card-view table,
+    .card-view tbody,
+    .card-view th,
+    .card-view td,
+    .card-view tr { display: block; }
+    .card-view thead { display: none; }
+    .card-view tr {
       margin-bottom: 1em;
       border: 3px solid var(--pico-table-border-color);
       border-radius: 0.5em;
     }
-    td {
+    .card-view td {
       position: relative;
       padding-left: 50%;
       border: none;
       border-bottom: var(--pico-border-width) solid var(--pico-table-border-color);
     }
-    td:last-child {
+    .card-view td:last-child {
       border-bottom: none;
     }
-    td::before {
+    .card-view td::before {
       content: attr(data-label);
       position: absolute;
       left: 0;
