@@ -14,7 +14,6 @@
   let selectedNode = null;
   let selectedNodeDetails = null;
   let loadingDetails = false;
-  let tooltip = { visible: false, text: "", x: 0, y: 0 };
   
   // Visibility toggles for each node type
   let showHardware = true;
@@ -23,6 +22,72 @@
   let showStorage = true;
   let showShares = true;
   let showMisc = true;
+  let hideMisc = false;
+  let hideLabels = false;
+  let tooltip = { visible: false, text: "", x: 0, y: 0 };
+  let labelVisibility = {};
+
+  async function toggleLabel(node) {
+    const isCurrentlyVisible = labelVisibility[node.id] !== false;
+    const newVisibility = !isCurrentlyVisible;
+
+    labelVisibility[node.id] = newVisibility;
+    labelVisibility = labelVisibility; // Force reactivity
+
+    // If showing a label and hideLabels is enabled, disable it
+    if (newVisibility && hideLabels) {
+      hideLabels = false;
+    }
+
+    const labelNode = cy.getElementById(`label-${node.id}`);
+    if (labelNode) {
+      const edge = labelNode.incomers('edge');
+      if (newVisibility) {
+        labelNode.show();
+        edge.show();
+      } else {
+        labelNode.hide();
+        edge.hide();
+      }
+    }
+
+    try {
+      await put(`/settings/nodes/${node.type}/${node.entity_id}`, {
+        label_visible: newVisibility,
+      });
+    } catch (e) {
+      addToast("Failed to save label visibility", "error");
+      // Revert optimistic update
+      labelVisibility[node.id] = isCurrentlyVisible;
+      labelVisibility = labelVisibility;
+    }
+  }
+
+  async function saveAllLabelVisibility(visible) {
+    // Save all label nodes' visibility to database
+    if (!cy) return;
+
+    const labelNodes = cy.nodes('node[type="label_node"]');
+    const savePromises = [];
+
+    labelNodes.forEach(labelNode => {
+      const parentId = labelNode.data('parent_id');
+      const [nodeType, nodeId] = parentId.split('-');
+
+      labelVisibility[parentId] = visible;
+
+      savePromises.push(
+        put(`/settings/nodes/${nodeType}/${nodeId}`, {
+          label_visible: visible,
+        }).catch(e => {
+          addToast(`Failed to save label visibility for ${parentId}`, "error");
+        })
+      );
+    });
+
+    labelVisibility = labelVisibility; // Force reactivity
+    await Promise.all(savePromises);
+  }
 
   async function loadNodeDetails(node) {
     if (!node) return;
@@ -55,14 +120,22 @@
 
   onMount(async () => {
     try {
-      const [graphRes, layoutRes, networksRes] = await Promise.all([
+      const [graphRes, layoutRes, networksRes, settingsRes] = await Promise.all([
         get("/map/graph"),
         get("/map/layout"),
         get("/map/networks"),
+        get("/settings/nodes"),
       ]);
 
       const savedPositions = layoutRes.data || {};
       networks = networksRes.networks || [];
+      
+      const visibilitySettings = settingsRes.data || [];
+      labelVisibility = visibilitySettings.reduce((acc, s) => {
+        acc[`${s.node_type}-${s.node_id}`] = s.label_visible;
+        return acc;
+      }, {});
+
 
       // Apply saved positions to nodes
       const nodes = graphRes.nodes.map((n) => {
@@ -88,12 +161,14 @@
               "font-weight": "400",
               "font-family": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
               "font-style": "italic",
-              color: "#333",
-              "text-outline-width": 0,
+              color: "#FFFFFF",
+              "text-outline-color": "#000",
+              "text-outline-width": 1,
               width: 48,
               height: 48,
               "text-wrap": "wrap",
-              "text-max-width": "65px",
+              "text-overflow-wrap": "whitespace",
+              "text-max-width": "40px",
               "background-color": "#FFFFFF",
               "border-width": 2,
               "border-color": "#999",
@@ -124,6 +199,17 @@
               label: "",  // Hide label for image nodes
             },
           },
+          {
+            selector: "node[type='label_node']",
+            style: {
+              "background-opacity": 0,
+              "border-width": 0,
+              "font-size": "8px",
+              "color": "#fff",
+              "text-outline-color": "#000",
+              "text-outline-width": 1,
+            }
+          },
           // Per-type styles
           ...Object.entries(NODE_STYLES).map(([type, s]) => ({
             selector: `node[type="${type}"]`,
@@ -151,9 +237,20 @@
               "curve-style": "bezier",
               label: "data(label)",
               "font-size": "9px",
-              color: "#999",
+              color: "#FFFFFF",
+              "text-outline-color": "#000",
+              "text-outline-width": 1,
               "text-rotation": "autorotate",
             },
+          },
+          {
+            selector: ".label_edge",
+            style: {
+              "line-style": "dotted",
+              "target-arrow-shape": "none",
+              "width": 1,
+              "line-color": "#999",
+            }
           },
           {
             selector: "edge[?manual]",
@@ -175,6 +272,27 @@
         maxZoom: 3,
       });
 
+      // Apply label visibility and initial positioning
+      cy.nodes('node[type="label_node"]').forEach(labelNode => {
+        const parentId = labelNode.data('parent_id');
+        const parent = cy.getElementById(parentId);
+        const isVisible = labelVisibility[parentId] !== false;
+
+        if (!isVisible) {
+          labelNode.hide();
+          labelNode.connectedEdges().hide();
+        }
+
+        // Position label nodes beside parent initially (if no saved position)
+        const savedPos = savedPositions[labelNode.id()];
+        if (!savedPos && parent) {
+          labelNode.position({
+            x: parent.position('x') + 60,
+            y: parent.position('y')
+          });
+        }
+      });
+
       // If no saved positions, run dagre layout
       const hasSavedPositions = Object.keys(savedPositions).length > 0;
       if (!hasSavedPositions && nodes.length > 0) {
@@ -188,7 +306,14 @@
 
       // Show details on tap
       cy.on("tap", "node", (evt) => {
-        const node = evt.target;
+        let node = evt.target;
+        // If it's a label node, select its parent instead
+        if (node.data('type') === 'label_node') {
+          const parent = cy.getElementById(node.data('parent_id'));
+          if (parent) {
+            node = parent;
+          }
+        }
         selectedNode = node.data();
       });
 
@@ -202,10 +327,20 @@
       // Show tooltip on hover
       cy.on("mouseover", "node", (evt) => {
         const node = evt.target;
+        let text = node.data("rawName") || node.data("label");
+
+        // For label nodes, get the parent's name
+        if (node.data('type') === 'label_node') {
+          const parent = cy.getElementById(node.data('parent_id'));
+          if (parent) {
+            text = parent.data('rawName') || parent.data('label');
+          }
+        }
+        
         const renderedPosition = node.renderedPosition();
         tooltip = {
           visible: true,
-          text: node.data("rawName") || node.data("label"),
+          text,
           x: renderedPosition.x + 45,
           y: renderedPosition.y
         };
@@ -240,6 +375,26 @@
     });
   }
 
+  // Reactive statement to hide/show all label nodes
+  $: if (cy) {
+    const allLabelNodes = cy.nodes('[type="label_node"]');
+    if (hideLabels) {
+      allLabelNodes.hide();
+      // Save all labels as not visible to database when hiding
+      if (Object.keys(labelVisibility).length > 0) {
+        saveAllLabelVisibility(false);
+      }
+    } else {
+      allLabelNodes.forEach(labelNode => {
+        const parentId = labelNode.data('parent_id');
+        const isVisible = labelVisibility[parentId] !== false;
+        if (isVisible) {
+          labelNode.show();
+        }
+      });
+    }
+  }
+
   onDestroy(() => {
     if (cy) cy.destroy();
     clearTimeout(saveTimeout);
@@ -247,7 +402,11 @@
 
   function runDagreLayout() {
     if (!cy) return;
-    
+
+    // Temporarily hide label nodes so they're not included in dagre layout
+    const labelNodes = cy.nodes('node[type="label_node"]');
+    labelNodes.hide();
+
     // Run initial dagre layout to establish vertical positioning (hierarchy)
     cy.layout({
       name: "dagre",
@@ -259,10 +418,10 @@
       padding: 30,
       animate: false,
     }).run();
-    
+
     // Separate misc nodes from the main tree structure
     const miscNodes = cy.nodes().filter(node => node.data('type') === 'misc');
-    const mainNodes = cy.nodes().filter(node => node.data('type') !== 'misc');
+    const mainNodes = cy.nodes().filter(node => node.data('type') !== 'misc' && node.data('type') !== 'label_node');
     
     // Find root nodes in main tree (nodes with no incoming edges, excluding misc)
     const roots = mainNodes
@@ -277,7 +436,7 @@
     function layoutSubtree(node) {
       // Get direct children, sorted by their original position (excluding misc)
       const children = node.outgoers('node')
-        .filter(n => n.data('type') !== 'misc')
+        .filter(n => n.data('type') !== 'misc' && n.data('type') !== 'label_node')
         .sort((a, b) => a.position().x - b.position().x);
       
       if (children.length === 0) {
@@ -317,7 +476,29 @@
       const pos = node.position();
       node.position({ x: pos.x + centerShift, y: pos.y });
     });
-    
+
+    // Position label nodes relative to their parents (after centerShift applied)
+    cy.nodes('node[type="label_node"]').forEach(labelNode => {
+      const parentId = labelNode.data('parent_id');
+      const parent = cy.getElementById(parentId);
+      const isVisible = labelVisibility[parentId] !== false;
+
+      if (parent) {
+        // Place label nodes below their parent during auto-layout
+        labelNode.position({
+          x: parent.position('x'),
+          y: parent.position('y') + 45
+        });
+      }
+
+      // Apply visibility (respecting both global and individual settings)
+      if (!hideLabels && isVisible) {
+        labelNode.show();
+      } else {
+        labelNode.hide();
+      }
+    });
+
     // Layout misc nodes on the right in a compact grid
     if (miscNodes.length > 0) {
       const miscGap = 100; // Gap between main tree and misc section
@@ -365,7 +546,6 @@
     setTimeout(saveLayout, 500);
   }
 </script>
-
 <div class="cy-container" bind:this={container}></div>
 
 {#if tooltip.visible}
@@ -502,6 +682,21 @@
           </div>
         {/if}
       {/if}
+
+      {#if selectedNode.imageIcon}
+        <div class="info-item">
+          <span class="info-label">Show Label</span>
+          <label class="toggle-option" style="font-size: 1rem;">
+            <input
+              type="checkbox"
+              checked={labelVisibility[selectedNode.id] !== false}
+              on:change={() => toggleLabel(selectedNode)}
+            />
+            <span />
+          </label>
+        </div>
+      {/if}
+
       {#if selectedNode.networkName}
         <div class="info-item">
           <span class="info-label">Network:</span>
@@ -576,7 +771,14 @@
       <input type="checkbox" bind:checked={showMisc} />
       <span>Misc</span>
     </label>
+    <label class="toggle-option">
+      <input type="checkbox" bind:checked={hideLabels} />
+      <span>Hide labels</span>
+    </label>
   </div>
+
+
+
 </div>
 
 <div class="legend">

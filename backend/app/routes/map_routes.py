@@ -76,6 +76,24 @@ def get_graph():
                 if item.icon.startswith("data:image/"):
                     node_data["imageIcon"] = item.icon
                     node_data["label"] = ""  # No text label for images
+
+                    # Create a separate node for the label
+                    label_node_data = {
+                        "id": f"label-{entity_type}-{item.id}",
+                        "label": item.name,
+                        "type": "label_node",
+                        "parent_id": node_data["id"]
+                    }
+                    nodes.append({"data": label_node_data})
+
+                    # Create an edge to connect the main node to its label
+                    edges.append({
+                        "data": {
+                            "source": node_data["id"],
+                            "target": label_node_data["id"],
+                        },
+                        "classes": "label_edge"
+                    })
                 else:
                     # It's an emoji or text icon
                     node_data["icon"] = item.icon

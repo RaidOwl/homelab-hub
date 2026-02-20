@@ -8,6 +8,7 @@ from .share import Share
 from .network import Network, NetworkMember
 from .misc import Misc
 from .map_layout import MapLayout, MapEdge, Relationship
+from .setting import NodeSetting
 
 __all__ = [
     "db",
@@ -24,4 +25,5 @@ __all__ = [
     "MapLayout",
     "MapEdge",
     "Relationship",
+    "NodeSetting",
 ]
