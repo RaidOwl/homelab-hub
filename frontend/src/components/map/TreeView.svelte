@@ -9,6 +9,7 @@
   let selectedNode = null;
   let selectedNodeDetails = null;
   let loadingDetails = false;
+  let linkedDocs = [];
 
   onMount(async () => {
     await loadTreeData();
@@ -97,11 +98,37 @@
     try {
       const response = await get(`/${node.type}/${node.entity_id}`);
       selectedNodeDetails = response.data;
+      
+      // Load linked documents
+      await loadLinkedDocs(node);
     } catch (e) {
       console.error('Failed to load node details:', e);
       selectedNodeDetails = null;
     }
     loadingDetails = false;
+  }
+
+  async function loadLinkedDocs(node) {
+    linkedDocs = [];
+    if (!node) return;
+    try {
+      // Map frontend route names to backend entity types
+      const entityTypeMap = {
+        'hardware': 'hardware',
+        'vms': 'vm',
+        'apps': 'app',
+        'storage': 'storage',
+        'networks': 'network',
+        'misc': 'misc',
+        'shares': 'share'
+      };
+      const entityType = entityTypeMap[node.type];
+      const res = await get(`/docs?entity_type=${entityType}&entity_id=${node.entity_id}`);
+      linkedDocs = res.data;
+    } catch (e) {
+      console.error('Failed to load linked docs:', e);
+      linkedDocs = [];
+    }
   }
   
   function handleNodeClick(event) {
@@ -111,6 +138,7 @@
   
   $: if (!selectedNode) {
     selectedNodeDetails = null;
+    linkedDocs = [];
     loadingDetails = false;
   }
 </script>
@@ -286,6 +314,16 @@
               <span class="info-value">{selectedNodeDetails.notes}</span>
             </div>
           {/if}
+          {#if linkedDocs.length > 0}
+            <div class="linked-docs-section">
+              <div class="info-label">📄 Related Documents:</div>
+              <div class="linked-docs-list">
+                {#each linkedDocs as doc}
+                  <a href="#/docs/{doc.id}" class="doc-link">{doc.title}</a>
+                {/each}
+              </div>
+            </div>
+          {/if}
         </div>
         <div class="info-footer">
           <a href="#/inventory/{selectedNode.type}" class="view-link">View in Inventory →</a>
@@ -335,7 +373,9 @@
     position: fixed;
     top: 200px;
     right: 20px;
-    width: 320px;
+    width: auto;
+    min-width: 280px;
+    max-width: 380px;
     background: var(--pico-card-background-color, #1e1e2e);
     border: 1px solid var(--pico-muted-border-color, #333);
     border-radius: 8px;
@@ -388,7 +428,26 @@
   .info-content {
     padding: 1rem;
     overflow-y: auto;
+    overflow-x: hidden;
     flex: 1;
+  }
+  
+  .info-content::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .info-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  .info-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+  
+  .info-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
   
   .info-item {
@@ -442,5 +501,32 @@
   
   .view-link:hover {
     text-decoration: underline;
+  }
+
+  .linked-docs-section {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--pico-muted-border-color, #333);
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .linked-docs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+
+  .doc-link {
+    color: var(--pico-primary, #6366f1);
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .doc-link:hover {
+    background: rgba(99, 102, 241, 0.1);
+    text-decoration: none;
   }
 </style>

@@ -1,14 +1,28 @@
 from flask import Blueprint, jsonify, request
 
-from ..models import db, Document
+from ..models import db, Document, Hardware, VM, AppService, Storage, Network, Misc
 
 bp = Blueprint("documents", __name__, url_prefix="/api/docs")
 
 
 @bp.route("", methods=["GET"])
 def list_docs():
-    """Return all documents as a flat list (frontend builds tree from parent_id)."""
-    docs = Document.query.order_by(Document.sort_order).all()
+    """Return all documents as a flat list (frontend builds tree from parent_id).
+    Optional query params:
+    - entity_type: filter by linked entity type
+    - entity_id: filter by linked entity id
+    """
+    query = Document.query
+    
+    entity_type = request.args.get("entity_type")
+    entity_id = request.args.get("entity_id")
+    
+    if entity_type:
+        query = query.filter_by(linked_entity_type=entity_type)
+    if entity_id:
+        query = query.filter_by(linked_entity_id=int(entity_id))
+    
+    docs = query.order_by(Document.sort_order).all()
     return jsonify(data=[d.to_dict() for d in docs], count=len(docs))
 
 
@@ -50,6 +64,68 @@ def delete_doc(doc_id):
     for child in doc.children:
         child.parent_id = None
     db.session.delete(doc)
+
+
+@bp.route("/linkable-items", methods=["GET"])
+def get_linkable_items():
+    """Return all items that can be linked to a document."""
+    items = []
+    
+    # Hardware
+    for hw in Hardware.query.order_by(Hardware.name).all():
+        items.append({
+            "type": "hardware",
+            "id": hw.id,
+            "name": hw.name,
+            "label": f"🖥️ {hw.name}"
+        })
+    
+    # VMs
+    for vm in VM.query.order_by(VM.name).all():
+        items.append({
+            "type": "vm",
+            "id": vm.id,
+            "name": vm.name,
+            "label": f"💿 {vm.name}"
+        })
+    
+    # Apps/Services
+    for app in AppService.query.order_by(AppService.name).all():
+        items.append({
+            "type": "app",
+            "id": app.id,
+            "name": app.name,
+            "label": f"📦 {app.name}"
+        })
+    
+    # Storage
+    for storage in Storage.query.order_by(Storage.name).all():
+        items.append({
+            "type": "storage",
+            "id": storage.id,
+            "name": storage.name,
+            "label": f"💾 {storage.name}"
+        })
+    
+    # Networks
+    for network in Network.query.order_by(Network.name).all():
+        items.append({
+            "type": "network",
+            "id": network.id,
+            "name": network.name,
+            "label": f"🌐 {network.name}"
+        })
+    
+    # Misc
+    for misc in Misc.query.order_by(Misc.name).all():
+        items.append({
+            "type": "misc",
+            "id": misc.id,
+            "name": misc.name,
+            "label": f"📌 {misc.name}"
+        })
+    
+    return jsonify(data=items, count=len(items))
     db.session.commit()
     return jsonify(message="Deleted"), 200
 

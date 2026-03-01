@@ -14,6 +14,7 @@
   let selectedNode = null;
   let selectedNodeDetails = null;
   let loadingDetails = false;
+  let linkedDocs = [];
   let tooltip = { visible: false, text: "", x: 0, y: 0 };
   
   // Visibility toggles for each node type
@@ -30,11 +31,37 @@
     try {
       const response = await get(`/${node.type}/${node.entity_id}`);
       selectedNodeDetails = response.data;
+      
+      // Load linked documents
+      await loadLinkedDocs(node);
     } catch (e) {
       console.error('Failed to load node details:', e);
       selectedNodeDetails = null;
     }
     loadingDetails = false;
+  }
+
+  async function loadLinkedDocs(node) {
+    linkedDocs = [];
+    if (!node) return;
+    try {
+      // Map frontend route names to backend entity types
+      const entityTypeMap = {
+        'hardware': 'hardware',
+        'vms': 'vm',
+        'apps': 'app',
+        'storage': 'storage',
+        'networks': 'network',
+        'misc': 'misc',
+        'shares': 'share'
+      };
+      const entityType = entityTypeMap[node.type];
+      const res = await get(`/docs?entity_type=${entityType}&entity_id=${node.entity_id}`);
+      linkedDocs = res.data;
+    } catch (e) {
+      console.error('Failed to load linked docs:', e);
+      linkedDocs = [];
+    }
   }
 
   $: if (selectedNode) {
@@ -523,6 +550,16 @@
           <span class="info-value">{selectedNodeDetails.notes}</span>
         </div>
       {/if}
+      {#if linkedDocs.length > 0}
+        <div class="linked-docs-section">
+          <div class="info-label">📄 Related Documents:</div>
+          <div class="linked-docs-list">
+            {#each linkedDocs as doc}
+              <a href="#/docs/{doc.id}" class="doc-link">{doc.title}</a>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
     <div class="info-footer">
       <a href="#/inventory/{selectedNode.type}" class="view-link">View in Inventory →</a>
@@ -630,7 +667,8 @@
     padding: 0;
     border-radius: 6px;
     min-width: 280px;
-    max-width: 350px;
+    max-width: 380px;
+    width: fit-content;
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -676,6 +714,27 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  .info-content::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .info-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  .info-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+  
+  .info-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
   .info-item {
     display: flex;
@@ -692,6 +751,32 @@
     font-size: 0.85rem;
     color: #ccc;
     font-style: italic;
+  }
+  .linked-docs-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .linked-docs-section .info-label {
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .linked-docs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .doc-link {
+    color: var(--pico-primary, #6366f1);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+  .doc-link:hover {
+    background-color: rgba(99, 102, 241, 0.15);
+    text-decoration: underline;
   }
   .info-label {
     color: #999;

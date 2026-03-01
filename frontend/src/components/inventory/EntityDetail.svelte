@@ -20,6 +20,7 @@
   let shares = [];
   let parentIp = '';
   let parentHostname = '';
+  let linkedDocs = [];
 
   const FORMS = {
     hardware: HardwareForm,
@@ -51,12 +52,35 @@
             parentHostname = vmRes.data.hostname || '';
           }
         }
+        
+        // Load linked documents
+        await loadLinkedDocs();
       } catch (e) {
         addToast(e.message, "error");
       }
       loading = false;
     }
   });
+
+  async function loadLinkedDocs() {
+    if (!id) return;
+    try {
+      // Map frontend route names to backend entity types
+      const entityTypeMap = {
+        'hardware': 'hardware',
+        'vms': 'vm',
+        'apps': 'app',
+        'storage': 'storage',
+        'networks': 'network',
+        'misc': 'misc'
+      };
+      const entityType = entityTypeMap[type];
+      const res = await get(`/docs?entity_type=${entityType}&entity_id=${id}`);
+      linkedDocs = res.data;
+    } catch (e) {
+      console.error('Failed to load linked docs:', e);
+    }
+  }
 
   async function handleSubmit() {
     try {
@@ -141,6 +165,19 @@
       on:delete={handleShareDelete}
     />
   {/if}
+  
+  {#if id && linkedDocs.length > 0}
+    <div class="linked-docs">
+      <h4>📄 Related Documents</h4>
+      <ul>
+        {#each linkedDocs as doc}
+          <li>
+            <a href="#/docs/{doc.id}">{doc.title}</a>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -151,5 +188,28 @@
   }
   form {
     max-width: 700px;
+  }
+  .linked-docs {
+    margin-top: 2rem;
+    max-width: 700px;
+  }
+  .linked-docs h4 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .linked-docs ul {
+    list-style: none;
+    padding: 0;
+  }
+  .linked-docs li {
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+  }
+  .linked-docs li:hover {
+    background: var(--pico-primary-background, rgba(99, 102, 241, 0.15));
+  }
+  .linked-docs a {
+    text-decoration: none;
+    color: var(--pico-primary, #6366f1);
   }
 </style>

@@ -9,6 +9,7 @@
   let activeDoc = null;
   let loading = true;
   let saveTimeout;
+  let linkableItems = [];
 
   $: docId = $params?.id ? parseInt($params.id) : null;
 
@@ -37,6 +38,16 @@
 
   $: loadDoc(docId);
   onMount(loadDocs);
+  onMount(loadLinkableItems);
+
+  async function loadLinkableItems() {
+    try {
+      const res = await get("/docs/linkable-items");
+      linkableItems = res.data;
+    } catch (e) {
+      addToast(e.message, "error");
+    }
+  }
 
   async function createDoc() {
     try {
@@ -90,6 +101,30 @@
       addToast(e.message, "error");
     }
   }
+
+  async function handleLinkChange() {
+    if (!activeDoc) return;
+    try {
+      await put(`/docs/${activeDoc.id}`, {
+        linked_entity_type: activeDoc.linked_entity_type || null,
+        linked_entity_id: activeDoc.linked_entity_id || null,
+      });
+      addToast("Link updated", "success");
+    } catch (e) {
+      addToast(e.message, "error");
+    }
+  }
+
+  function clearLink() {
+    if (!activeDoc) return;
+    activeDoc.linked_entity_type = null;
+    activeDoc.linked_entity_id = null;
+    handleLinkChange();
+  }
+
+  $: linkedItemKey = activeDoc?.linked_entity_type && activeDoc?.linked_entity_id
+    ? `${activeDoc.linked_entity_type}-${activeDoc.linked_entity_id}`
+    : "";
 </script>
 
 <div class="docs-page">
@@ -114,12 +149,38 @@
 
   <div class="doc-content">
     {#if activeDoc}
-      <input
-        class="doc-title"
-        type="text"
-        bind:value={activeDoc.title}
-        on:blur={handleTitleChange}
-      />
+      <div class="doc-header">
+        <input
+          class="doc-title"
+          type="text"
+          bind:value={activeDoc.title}
+          on:blur={handleTitleChange}
+          placeholder="Document title"
+        />
+        <div class="doc-link-section">
+          <label for="doc-link">🔗</label>
+          <select
+            id="doc-link"
+            value={linkedItemKey}
+            on:change={(e) => {
+              const value = e.target.value;
+              if (!value) {
+                clearLink();
+              } else {
+                const [type, id] = value.split('-');
+                activeDoc.linked_entity_type = type;
+                activeDoc.linked_entity_id = parseInt(id);
+                handleLinkChange();
+              }
+            }}
+          >
+            <option value="">Link to...</option>
+            {#each linkableItems as item}
+              <option value={`${item.type}-${item.id}`}>{item.label}</option>
+            {/each}
+          </select>
+        </div>
+      </div>
       <DocEditor content={activeDoc.content} onChange={handleContentChange} />
     {:else}
       <p class="placeholder">Select a document or create a new one.</p>
@@ -192,14 +253,38 @@
     flex-direction: column;
     overflow: hidden;
   }
+  .doc-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--pico-muted-border-color, #333);
+    padding: 0.5rem;
+  }
   .doc-title {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 600;
     border: none;
-    border-bottom: 1px solid var(--pico-muted-border-color, #333);
     border-radius: 0;
-    margin-bottom: 0;
-    padding: 0.5rem;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    min-width: 200px;
+  }
+  .doc-link-section {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  .doc-link-section label {
+    margin: 0;
+    font-size: 1rem;
+  }
+  .doc-link-section select {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+    margin: 0;
+    min-width: 200px;
   }
   .placeholder {
     padding: 2rem;
