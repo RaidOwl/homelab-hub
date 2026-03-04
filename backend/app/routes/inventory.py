@@ -6,7 +6,9 @@ import json
 bp = Blueprint('inventory', __name__, url_prefix='/inventory')
 
 ENTITY_MAP = {
+    "clusters": Cluster,
     "hardware": Hardware,
+    "nodes": Node,
     "vms": VM,
     "apps": AppService,
     "storage": Storage,
@@ -49,7 +51,9 @@ def export_database():
     try:
         # Define the order of data to export to maintain relationships
         data = {
+            'clusters': [c.to_dict() for c in Cluster.query.all()],
             'hardware': [h.to_dict() for h in Hardware.query.all()],
+            'nodes': [n.to_dict() for n in Node.query.all()],
             'vms': [vm.to_dict() for vm in VM.query.all()],
             'apps': [app.to_dict() for app in AppService.query.all()],
             'storage': [s.to_dict() for s in Storage.query.all()],
@@ -71,9 +75,11 @@ def import_database():
         # Clear existing data in dependency order
         db.session.query(Share).delete()  # Delete shares before storage
         db.session.query(AppService).delete()
-        db.session.query(VM).delete()
-        db.session.query(Hardware).delete()
         db.session.query(Storage).delete()
+        db.session.query(VM).delete()
+        db.session.query(Node).delete()
+        db.session.query(Cluster).delete()
+        db.session.query(Hardware).delete()
         db.session.query(Network).delete()
         db.session.query(Misc).delete()
         db.session.query(Document).delete()
@@ -87,23 +93,37 @@ def import_database():
             item_copy.pop('updated_at', None)
             # Remove nested relationships (they'll be imported separately)
             item_copy.pop('shares', None)
+            item_copy.pop('nodes', None)
             return item_copy
 
-        # Import new data in dependency order
-        # First, import hardware (no dependencies)
+        # Import clusters (no dependencies)
+        if 'clusters' in import_data:
+            for item in import_data['clusters']:
+                cluster = Cluster(**clean_item(item))
+                db.session.add(cluster)
+
+        db.session.flush()
+
+        # Import hardware (no dependencies)
         if 'hardware' in import_data:
             for item in import_data['hardware']:
                 hardware = Hardware(**clean_item(item))
                 db.session.add(hardware)
-        
-        db.session.flush()  # Get IDs for hardware
 
-        # Import VMs (depends on hardware)
+        # Import nodes (depends on clusters)
+        if 'nodes' in import_data:
+            for item in import_data['nodes']:
+                node = Node(**clean_item(item))
+                db.session.add(node)
+
+        db.session.flush()  # Get IDs for hardware and nodes
+
+        # Import VMs (depends on hardware/nodes)
         if 'vms' in import_data:
             for item in import_data['vms']:
                 vm = VM(**clean_item(item))
                 db.session.add(vm)
-        
+
         db.session.flush()  # Get IDs for VMs
 
         # Import apps (depends on hardware and VMs)

@@ -23,6 +23,12 @@ config.set_main_option("sqlalchemy.url", flask_app.config["SQLALCHEMY_DATABASE_U
 target_metadata = db.metadata
 
 
+def _use_batch():
+    """Use batch mode for SQLite (required for ALTER TABLE operations)."""
+    url = config.get_main_option("sqlalchemy.url") or ""
+    return url.startswith("sqlite")
+
+
 def run_migrations_offline():
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
@@ -31,6 +37,7 @@ def run_migrations_offline():
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        render_as_batch=_use_batch(),
     )
 
     with context.begin_transaction():
@@ -46,7 +53,11 @@ def run_migrations_online():
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=_use_batch(),
+        )
 
         with context.begin_transaction():
             context.run_migrations()

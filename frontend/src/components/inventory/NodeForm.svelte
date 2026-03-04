@@ -5,52 +5,26 @@
 
   export let item = {};
 
-  let hardwareOptions = [];
-  let nodeOptions = [];
+  let clusterOptions = [];
 
   onMount(async () => {
     try {
-      const [hwRes, nodeRes] = await Promise.all([
-        get("/hardware"),
-        get("/nodes"),
-      ]);
-      hardwareOptions = hwRes.data;
-      nodeOptions = nodeRes.data;
+      const res = await get("/clusters");
+      clusterOptions = res.data;
     } catch (e) {
-      // ignore — dropdowns will be empty
+      // ignore
     }
   });
-
-  // Default vm_type
-  $: if (!item.vm_type) item.vm_type = "vm";
 </script>
 
 <div class="grid">
   <label>Name *<input type="text" bind:value={item.name} required /></label>
   <label>
-    Type
-    <select bind:value={item.vm_type}>
-      <option value="vm">VM</option>
-      <option value="lxc">LXC Container</option>
-    </select>
-  </label>
-</div>
-<div class="grid">
-  <label>
-    Hardware
-    <select bind:value={item.hardware_id}>
-      <option value="">None</option>
-      {#each hardwareOptions as hw}
-        <option value={hw.id}>{hw.name}</option>
-      {/each}
-    </select>
-  </label>
-  <label>
-    Node
-    <select bind:value={item.node_id}>
-      <option value="">None</option>
-      {#each nodeOptions as node}
-        <option value={node.id}>{node.name}</option>
+    Cluster
+    <select bind:value={item.cluster_id}>
+      <option value="">No cluster</option>
+      {#each clusterOptions as cluster}
+        <option value={cluster.id}>{cluster.name}</option>
       {/each}
     </select>
   </label>
@@ -64,9 +38,9 @@
   <label>OS<input type="text" bind:value={item.os} /></label>
 </div>
 <div class="grid">
+  <label>CPU<input type="text" bind:value={item.cpu} /></label>
   <label>CPU Cores<input type="number" bind:value={item.cpu_cores} /></label>
   <label>RAM (GB)<input type="number" step="0.1" bind:value={item.ram_gb} /></label>
-  <label>Disk (GB)<input type="number" step="0.1" bind:value={item.disk_gb} /></label>
 </div>
 <IconPicker bind:value={item.icon} />
 <label>Notes<textarea bind:value={item.notes} rows="3"></textarea></label>

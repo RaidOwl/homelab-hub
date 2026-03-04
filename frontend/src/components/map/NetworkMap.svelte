@@ -17,6 +17,8 @@
   let tooltip = { visible: false, text: "", x: 0, y: 0 };
   
   // Visibility toggles for each node type
+  let showClusters = true;
+  let showNodes = true;
   let showHardware = true;
   let showVms = true;
   let showApps = true;
@@ -45,6 +47,8 @@
   }
 
   const NODE_STYLES = {
+    clusters:  { shape: "round-pentagon",   color: "#FFCDD2" },  // Pastel red
+    nodes:     { shape: "hexagon",          color: "#B3E5FC" },  // Pastel light blue
     hardware:  { shape: "hexagon",          color: "#C5E1F5" },  // Pastel blue
     vms:       { shape: "ellipse",          color: "#C8E6C9" },  // Pastel green
     apps:      { shape: "round-rectangle", color: "#FFE0B2" },  // Pastel orange
@@ -132,6 +136,14 @@
               "background-color": s.color,
             },
           })),
+          // LXC containers get dashed border
+          {
+            selector: 'node[vmType="lxc"]',
+            style: {
+              "border-style": "dashed",
+              "border-width": 3,
+            },
+          },
           // Override color for nodes with network color
           {
             selector: "node[networkColor]",
@@ -222,6 +234,8 @@
   // Reactive statement to hide/show nodes by type
   $: if (cy) {
     const nodeTypes = [
+      { type: 'clusters', show: showClusters },
+      { type: 'nodes', show: showNodes },
       { type: 'hardware', show: showHardware },
       { type: 'vms', show: showVms },
       { type: 'apps', show: showApps },
@@ -553,6 +567,14 @@
   <h3>Show Inventory</h3>
   <div class="toggle-list">
     <label class="toggle-option">
+      <input type="checkbox" bind:checked={showClusters} />
+      <span>Clusters</span>
+    </label>
+    <label class="toggle-option">
+      <input type="checkbox" bind:checked={showNodes} />
+      <span>Nodes</span>
+    </label>
+    <label class="toggle-option">
       <input type="checkbox" bind:checked={showHardware} />
       <span>Hardware</span>
     </label>
@@ -580,6 +602,18 @@
 </div>
 
 <div class="legend">
+  <div class="legend-item">
+    <svg width="24" height="24" viewBox="0 0 16 16">
+      <polygon points="8,1 14,4 15,11 8,15 1,11 2,4" fill="#FFCDD2" stroke="#999" stroke-width="1"/>
+    </svg>
+    <span>clusters</span>
+  </div>
+  <div class="legend-item">
+    <svg width="24" height="24" viewBox="0 0 16 16">
+      <polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#B3E5FC" stroke="#999" stroke-width="1"/>
+    </svg>
+    <span>nodes</span>
+  </div>
   <div class="legend-item">
     <svg width="24" height="24" viewBox="0 0 16 16">
       <polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#C5E1F5" stroke="#999" stroke-width="1"/>

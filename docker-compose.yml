@@ -1,9 +1,34 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: homelab-hub-db
+    environment:
+      POSTGRES_DB: homelab_hub
+      POSTGRES_USER: homelab
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-homelab}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    restart: unless-stopped
+
   homelab-hub:
     image: raidowl/homelab-hub:latest
     container_name: homelab-hub
-    ports:
-      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://homelab:${POSTGRES_PASSWORD:-homelab}@db:5432/homelab_hub
     volumes:
       - ./data:/data
+    networks:
+      - internal
+    expose:
+      - "8000"
+    depends_on:
+      - db
     restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  internal:

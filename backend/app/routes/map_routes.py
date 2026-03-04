@@ -3,13 +3,15 @@ from ipaddress import ip_address, ip_network, AddressValueError
 
 from ..models import (
     db, Hardware, VM, AppService, Storage, Network, Misc, Share,
-    NetworkMember, Relationship, MapLayout, MapEdge,
+    NetworkMember, Relationship, MapLayout, MapEdge, Node, Cluster,
 )
 
 bp = Blueprint("map", __name__, url_prefix="/api/map")
 
 ENTITY_MAP = {
+    "clusters": Cluster,
     "hardware": Hardware,
+    "nodes": Node,
     "vms": VM,
     "apps": AppService,
     "storage": Storage,
@@ -55,7 +57,9 @@ def get_graph():
         for item in model.query.all():
             # Assign ranks for hierarchical layout
             rank_map = {
+                "clusters": -1,
                 "hardware": 0,
+                "nodes": 0,
                 "vms": 1,
                 "apps": 2,
                 "storage": 2,
@@ -81,6 +85,10 @@ def get_graph():
                     node_data["icon"] = item.icon
                     node_data["label"] = item.icon  # Only show the icon
             
+            # Add vm_type for VMs (vm or lxc)
+            if hasattr(item, "vm_type") and item.vm_type:
+                node_data["vmType"] = item.vm_type
+
             # Automatically determine network membership based on IP address
             if hasattr(item, "ip_address") and item.ip_address:
                 network = get_network_for_ip(item.ip_address)
@@ -93,17 +101,45 @@ def get_graph():
             nodes.append({"data": node_data})
 
     # Edges from FK relationships
+    # Cluster → Node
+    for node in Node.query.all():
+        if node.cluster_id:
+            edges.append({
+                "data": {
+                    "source": f"clusters-{node.cluster_id}",
+                    "target": f"nodes-{node.id}",
+                    "label": "hosts",
+                }
+            })
+
     for vm in VM.query.all():
-        edges.append({
-            "data": {
-                "source": f"hardware-{vm.hardware_id}",
-                "target": f"vms-{vm.id}",
-                "label": "hosts",
-            }
-        })
+        if vm.node_id:
+            edges.append({
+                "data": {
+                    "source": f"nodes-{vm.node_id}",
+                    "target": f"vms-{vm.id}",
+                    "label": "hosts",
+                }
+            })
+        elif vm.hardware_id:
+            edges.append({
+                "data": {
+                    "source": f"hardware-{vm.hardware_id}",
+                    "target": f"vms-{vm.id}",
+                    "label": "hosts",
+                }
+            })
 
     for app in AppService.query.all():
-        if app.hardware_id:
+        if app.node_id:
+            edges.append({
+                "data": {
+                    "source": f"nodes-{app.node_id}",
+                    "target": f"apps-{app.id}",
+                    "label": "runs",
+                }
+            })
+        elif app.hardware_id:
             edges.append({
                 "data": {
                     "source": f"hardware-{app.hardware_id}",
@@ -121,7 +157,15 @@ def get_graph():
             })
 
     for s in Storage.query.all():
-        if s.hardware_id:
+        if s.node_id:
+            edges.append({
+                "data": {
+                    "source": f"nodes-{s.node_id}",
+                    "target": f"storage-{s.id}",
+                    "label": "storage",
+                }
+            })
+        elif s.hardware_id:
             edges.append({
                 "data": {
                     "source": f"hardware-{s.hardware_id}",

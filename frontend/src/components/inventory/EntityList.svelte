@@ -3,6 +3,8 @@
   import { get, post, del } from "../../lib/api.js";
   import { addToast } from "../../lib/stores.js";
   import Modal from "../Modal.svelte";
+  import ClusterForm from "./ClusterForm.svelte";
+  import NodeForm from "./NodeForm.svelte";
   import HardwareForm from "./HardwareForm.svelte";
   import VmForm from "./VmForm.svelte";
   import AppForm from "./AppForm.svelte";
@@ -21,6 +23,8 @@
   let sortDirection = 'asc';
 
   const FORMS = {
+    clusters: ClusterForm,
+    nodes: NodeForm,
     hardware: HardwareForm,
     vms: VmForm,
     apps: AppForm,
@@ -30,8 +34,10 @@
   };
 
   const COLUMNS = {
+    clusters: ["name", "description"],
+    nodes: ["name", "hostname", "ip_address", "os", "cpu", "ram_gb"],
     hardware: ["name", "hostname", "ip_address", "os", "cpu", "ram_gb"],
-    vms: ["name", "hostname", "ip_address", "os", "cpu_cores", "ram_gb"],
+    vms: ["name", "hostname", "ip_address", "os", "vm_type", "cpu_cores", "ram_gb"],
     apps: ["name", "hostname", "ip_address", "external_hostname", "port"],
     storage: ["name", "storage_type", "raid_type", "raw_space_tb", "usable_space_tb"],
     networks: ["name", "vlan_id", "subnet", "gateway"],
@@ -48,6 +54,7 @@
     usable_space_tb: "Usable (TB)",
     storage_type: "Type",
     raid_type: "RAID",
+    vm_type: "VM Type",
   };
 
   function label(col) {

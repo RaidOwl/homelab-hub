@@ -7,6 +7,7 @@ class Storage(BaseMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     hardware_id = db.Column(db.Integer, db.ForeignKey("hardware.id", ondelete="SET NULL"), nullable=True)
     vm_id = db.Column(db.Integer, db.ForeignKey("vms.id", ondelete="SET NULL"), nullable=True)
+    node_id = db.Column(db.Integer, db.ForeignKey("nodes.id", ondelete="SET NULL"), nullable=True)
     name = db.Column(db.Text, nullable=False)
     storage_type = db.Column(db.Text)
     raid_type = db.Column(db.Text)

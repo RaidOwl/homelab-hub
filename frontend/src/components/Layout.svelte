@@ -1,8 +1,23 @@
 <script>
+  import { onMount } from "svelte";
   import Sidebar from "./Sidebar.svelte";
 
   // In production (Docker), use relative URLs. In dev, use explicit URL for proxy.
   const API_BASE = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5001');
+
+  let authUser = null;
+
+  onMount(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/user`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.username) authUser = data;
+      }
+    } catch (e) {
+      // Auth not available — ignore
+    }
+  });
 
   async function exportDatabase() {
     try {
@@ -72,6 +87,9 @@
   <header class="header">
     <h1>Home Lab Hub</h1>
     <div class="header-actions">
+      {#if authUser}
+        <span class="auth-user">{authUser.name || authUser.username}</span>
+      {/if}
       <button class="btn btn-primary" on:click={exportDatabase}>Export Data</button>
       <button class="btn btn-secondary" on:click={triggerImport}>Import Data</button>
       <input id="import-file-input" type="file" accept=".json" style="display: none;" on:change={importDatabase} />
@@ -110,6 +128,13 @@
   .header-actions {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+  }
+
+  .auth-user {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
   }
   
   .btn {

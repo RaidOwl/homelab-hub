@@ -1,0 +1,19 @@
+# Example Caddyfile for Homelab Hub behind Authentik forward auth
+#
+# Prerequisites:
+# - Authentik outpost running (e.g., at authentik.example.com)
+# - homelab-hub container on the same Docker network
+#
+# Adjust domains and outpost URL to match your setup.
+
+homelab.example.com {
+	# Forward auth to Authentik outpost
+	forward_auth authentik-outpost:9000 {
+		uri /outpost.goauthentik.io/auth/caddy
+		copy_headers X-Authentik-Username X-Authentik-Name X-Authentik-Email X-Authentik-Groups
+		trusted_proxies private_ranges
+	}
+
+	# Reverse proxy to homelab-hub
+	reverse_proxy homelab-hub:8000
+}

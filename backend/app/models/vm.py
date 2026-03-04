@@ -5,7 +5,8 @@ class VM(BaseMixin, db.Model):
     __tablename__ = "vms"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    hardware_id = db.Column(db.Integer, db.ForeignKey("hardware.id", ondelete="CASCADE"), nullable=False)
+    hardware_id = db.Column(db.Integer, db.ForeignKey("hardware.id", ondelete="CASCADE"), nullable=True)
+    node_id = db.Column(db.Integer, db.ForeignKey("nodes.id", ondelete="CASCADE"), nullable=True)
     name = db.Column(db.Text, nullable=False)
     hostname = db.Column(db.Text)
     ip_address = db.Column(db.Text)
@@ -14,8 +15,11 @@ class VM(BaseMixin, db.Model):
     ram_gb = db.Column(db.Float)
     disk_gb = db.Column(db.Float)
     os = db.Column(db.Text)
+    vm_type = db.Column(db.Text, default="vm")  # "vm" or "lxc"
     icon = db.Column(db.Text)
     notes = db.Column(db.Text)
 
-    apps = db.relationship("AppService", backref="vm", lazy="select")
-    storage_pools = db.relationship("Storage", backref="vm", lazy="select")
+    apps = db.relationship("AppService", backref="vm", lazy="select",
+                           foreign_keys="AppService.vm_id")
+    storage_pools = db.relationship("Storage", backref="vm", lazy="select",
+                                    foreign_keys="Storage.vm_id")

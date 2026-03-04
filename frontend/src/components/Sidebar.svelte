@@ -2,6 +2,8 @@
   import { location } from "svelte-spa-router";
 
   const inventoryTypes = [
+    { key: "clusters", label: "Clusters" },
+    { key: "nodes", label: "Nodes" },
     { key: "hardware", label: "Hardware" },
     { key: "vms", label: "VMs" },
     { key: "apps", label: "Apps" },
