@@ -1,7 +1,7 @@
 <script>
   import { push } from "svelte-spa-router";
   import { get, post, del } from "../../lib/api.js";
-  import { addToast } from "../../lib/stores.js";
+  import { addToast, isAdmin } from "../../lib/stores.js";
   import Modal from "../Modal.svelte";
   import HardwareForm from "./HardwareForm.svelte";
   import VmForm from "./VmForm.svelte";
@@ -168,7 +168,9 @@
     <h2>{type.charAt(0).toUpperCase() + type.slice(1)}</h2>
     <div class="actions">
       <input type="search" placeholder="Filter..." bind:value={search} />
-      <button on:click={handleAddClick}>+ Add</button>
+      {#if $isAdmin}
+        <button on:click={handleAddClick}>+ Add</button>
+      {/if}
     </div>
   </div>
 
@@ -199,14 +201,16 @@
                 <td>{item[col] ?? ""}</td>
               {/each}
               <td>
-                <div class="button-group">
-                  <button class="outline secondary small" on:click|stopPropagation={() => duplicateItem(item)}>
-                    Duplicate
-                  </button>
-                  <button class="outline secondary small btn-delete" on:click|stopPropagation={() => deleteItem(item.id)}>
-                    Delete
-                  </button>
-                </div>
+                {#if $isAdmin}
+                  <div class="button-group">
+                    <button class="outline secondary small" on:click|stopPropagation={() => duplicateItem(item)}>
+                      Duplicate
+                    </button>
+                    <button class="outline secondary small btn-delete" on:click|stopPropagation={() => deleteItem(item.id)}>
+                      Delete
+                    </button>
+                  </div>
+                {/if}
               </td>
             </tr>
           {/each}
@@ -216,6 +220,7 @@
   {/if}
 </div>
 
+{#if $isAdmin}
 <Modal 
   isOpen={showCreateModal} 
   title={modalTitle}
@@ -231,6 +236,7 @@
     </div>
   </form>
 </Modal>
+{/if}
 
 <style>
   .list-header {

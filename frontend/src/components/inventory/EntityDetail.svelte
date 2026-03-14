@@ -1,7 +1,7 @@
 <script>
   import { onMount, createEventDispatcher } from "svelte";
   import { get, post, put, del } from "../../lib/api.js";
-  import { addToast } from "../../lib/stores.js";
+  import { addToast, isAdmin } from "../../lib/stores.js";
   import HardwareForm from "./HardwareForm.svelte";
   import VmForm from "./VmForm.svelte";
   import AppForm from "./AppForm.svelte";
@@ -145,7 +145,9 @@
     <svelte:component this={FormComponent} bind:item />
 
     <div class="form-actions">
-      <button type="submit">{id ? "Save" : "Create"}</button>
+      {#if $isAdmin}
+        <button type="submit">{id ? "Save" : "Create"}</button>
+      {/if}
       <button type="button" class="outline secondary" on:click={() => {
         dispatch("cancel");
         if (id) history.back();

@@ -10,3 +10,5 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Allow larger request bodies for base64 image uploads (5MB)
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+    # Admin password for write access (set via ADMIN_PASSWORD env var)
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")

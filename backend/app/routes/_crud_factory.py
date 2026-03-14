@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 
 from ..models import db
+from ..auth import admin_required
 
 
 def create_crud_blueprint(name, model_class, url_prefix=None, detail_route=True):
@@ -20,6 +21,7 @@ def create_crud_blueprint(name, model_class, url_prefix=None, detail_route=True)
             return jsonify(data=item.to_dict())
 
     @bp.route("", methods=["POST"])
+    @admin_required
     def create_item():
         data = request.get_json()
         if not data:
@@ -36,6 +38,7 @@ def create_crud_blueprint(name, model_class, url_prefix=None, detail_route=True)
             return jsonify(error=str(e)), 500
 
     @bp.route("/<int:item_id>", methods=["PUT"])
+    @admin_required
     def update_item(item_id):
         item = db.get_or_404(model_class, item_id)
         data = request.get_json()
@@ -51,6 +54,7 @@ def create_crud_blueprint(name, model_class, url_prefix=None, detail_route=True)
             return jsonify(error=str(e)), 500
 
     @bp.route("/<int:item_id>", methods=["DELETE"])
+    @admin_required
     def delete_item(item_id):
         item = db.get_or_404(model_class, item_id)
         db.session.delete(item)

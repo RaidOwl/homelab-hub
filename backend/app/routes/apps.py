@@ -1,6 +1,7 @@
 from flask import request, jsonify
 from ..models import AppService, Hardware, VM, db
 from ._crud_factory import create_crud_blueprint
+from ..auth import admin_required
 
 bp = create_crud_blueprint("apps", AppService)
 
@@ -20,6 +21,7 @@ def _set_default_hostname(app_service, data):
 
 
 @bp.route("", methods=["POST"])
+@admin_required
 def create_app():
     data = request.get_json()
     if not data:
@@ -33,6 +35,7 @@ def create_app():
 
 
 @bp.route("/<int:item_id>", methods=["PUT"])
+@admin_required
 def update_app(item_id):
     app = db.get_or_404(AppService, item_id)
     data = request.get_json()

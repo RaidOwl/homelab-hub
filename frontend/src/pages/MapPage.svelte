@@ -5,6 +5,7 @@
 
   let mapComponent;
   let viewMode = "map"; // "map" or "tree"
+  let maxChildrenPerLevel = 8;
 </script>
 
 <div class="map-page">
@@ -26,15 +27,16 @@
         </button>
       </div>
       {#if viewMode === "map"}
-        <MapControls 
-          on:relayout={() => mapComponent?.relayout()} 
+        <MapControls
+          bind:maxChildrenPerLevel
+          on:relayout={() => mapComponent?.relayout()}
         />
       {/if}
     </div>
   </div>
   <div class="map-container">
     {#if viewMode === "map"}
-      <NetworkMap bind:this={mapComponent} />
+      <NetworkMap bind:this={mapComponent} {maxChildrenPerLevel} />
     {:else}
       <TreeView />
     {/if}

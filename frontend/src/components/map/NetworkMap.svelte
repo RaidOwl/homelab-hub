@@ -3,9 +3,13 @@
   import cytoscape from "cytoscape";
   import dagre from "cytoscape-dagre";
   import { get, put } from "../../lib/api.js";
-  import { addToast } from "../../lib/stores.js";
+  import { addToast, isAdmin } from "../../lib/stores.js";
+  import { get as getStore } from "svelte/store";
 
   cytoscape.use(dagre);
+
+  // --- Config ---
+  export let maxChildrenPerLevel = 8; // Max child nodes per row before wrapping to next row
 
   let container;
   let cy;
@@ -200,6 +204,7 @@
         layout: { name: "preset" }, // Use saved positions first
         minZoom: 0.2,
         maxZoom: 3,
+        autoungrabify: !getStore(isAdmin), // disable node dragging for non-admins
       });
 
       // If no saved positions, run dagre layout
@@ -210,7 +215,7 @@
 
       // Persist positions on drag end
       cy.on("dragfree", "node", () => {
-        debounceSaveLayout();
+        if (getStore(isAdmin)) debounceSaveLayout();
       });
 
       // Show details on tap
@@ -247,6 +252,9 @@
   });
 
   // Reactive statement to hide/show nodes by type
+  // Update node grabbability when admin status changes
+  $: if (cy) cy.autoungrabify(!$isAdmin);
+
   $: if (cy) {
     const nodeTypes = [
       { type: 'hardware', show: showHardware },
@@ -299,30 +307,72 @@
     let nextX = 0;
     const nodeSpacing = 70; // Horizontal space between leaf nodes
     const subtreeGap = 50; // Gap between separate tree hierarchies
-    
-    // Depth-first layout: children are evenly spaced, parents centered above
-    function layoutSubtree(node) {
-      // Get direct children, sorted by their original position (excluding misc)
+    const rankSep = 100;   // Vertical distance between ranks (must match dagre rankSep above)
+
+    // Count leaf nodes in a subtree (excluding misc). Used to sort children so
+    // narrow/leaf subtrees go left and wide/deep subtrees go right, keeping the
+    // parent centred without being pulled hard to one side by one heavy branch.
+    function leafCount(node) {
       const children = node.outgoers('node')
         .filter(n => n.data('type') !== 'misc')
-        .sort((a, b) => a.position().x - b.position().x);
+        .toArray();
+      if (children.length === 0) return 1;
+      return children.reduce((sum, c) => sum + leafCount(c), 0);
+    }
+
+    // Depth-first layout. Returns { x, maxY } so callers know the true bottom
+    // of this subtree — used to place overflow rows cleanly below it.
+    function layoutSubtree(node, yOffset = 0) {
+      const children = node.outgoers('node')
+        .filter(n => n.data('type') !== 'misc')
+        // Sort by subtree width (leaf count) ascending → narrow/leaf nodes go
+        // first (leftmost), wide/deep subtrees go last (rightmost).
+        .sort((a, b) => leafCount(a) - leafCount(b))
+        .toArray();
       
+      const nodeY = node.position().y + yOffset;
+
       if (children.length === 0) {
-        // Leaf node - assign next available X position
+        // Leaf node — assign next available X position
         const x = nextX;
         nextX += nodeSpacing;
-        node.position({ x, y: node.position().y });
-        return x;
+        node.position({ x, y: nodeY });
+        return { x, maxY: nodeY };
       }
       
-      // Recursively layout all children depth-first
-      const childXPositions = children.map(child => layoutSubtree(child));
+      // --- First chunk: lays out normally and claims the horizontal band ---
+      const childXPositions = [];
+      let localMaxY = nodeY;
+      const firstChunk = children.slice(0, maxChildrenPerLevel);
+      const xBefore = nextX;
+      firstChunk.forEach(child => {
+        const result = layoutSubtree(child, yOffset);
+        childXPositions.push(result.x);
+        localMaxY = Math.max(localMaxY, result.maxY);
+      });
+      const xAfter = nextX;
+
+      // --- Overflow rows: stacked below the first chunk's deepest node ---
+      // localMaxY grows as each row is placed, so rows never overlap.
+      for (let i = maxChildrenPerLevel; i < children.length; i += maxChildrenPerLevel) {
+        const chunk = children.slice(i, i + maxChildrenPerLevel);
+        // Target Y for this row = just below the deepest point reached so far
+        const targetY = localMaxY + rankSep;
+        // All siblings share the same dagre Y, so the offset is uniform
+        const overflowYOffset = targetY - children[i].position().y;
+        nextX = xBefore; // same horizontal band, no stagger
+        chunk.forEach(child => {
+          const result = layoutSubtree(child, overflowYOffset);
+          childXPositions.push(result.x);
+          localMaxY = Math.max(localMaxY, result.maxY);
+        });
+        nextX = xAfter; // restore so siblings after this node continue correctly
+      }
       
-      // Center this node over its children
       const avgX = childXPositions.reduce((sum, x) => sum + x, 0) / childXPositions.length;
-      node.position({ x: avgX, y: node.position().y });
+      node.position({ x: avgX, y: nodeY });
       
-      return avgX;
+      return { x: avgX, maxY: localMaxY };
     }
     
     // Layout each root tree
@@ -374,7 +424,7 @@
   }
 
   async function saveLayout() {
-    if (!cy) return;
+    if (!cy || !getStore(isAdmin)) return;
     const positions = {};
     cy.nodes().forEach((node) => {
       const pos = node.position();

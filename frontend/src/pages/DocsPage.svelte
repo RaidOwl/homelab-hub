@@ -2,7 +2,7 @@
   import { params } from "svelte-spa-router";
   import { onMount } from "svelte";
   import { get, post, put, del } from "../lib/api.js";
-  import { addToast } from "../lib/stores.js";
+  import { addToast, isAdmin } from "../lib/stores.js";
   import DocEditor from "../components/docs/DocEditor.svelte";
 
   let docs = [];
@@ -131,7 +131,9 @@
   <aside class="doc-list">
     <div class="doc-list-header">
       <h3>Documents</h3>
-      <button class="outline small" on:click={createDoc}>+ New</button>
+      {#if $isAdmin}
+        <button class="outline small" on:click={createDoc}>+ New</button>
+      {/if}
     </div>
     {#if loading}
       <p aria-busy="true">Loading...</p>
@@ -140,7 +142,9 @@
         {#each docs as doc (doc.id)}
           <li class:active={activeDoc?.id === doc.id}>
             <a href={"#/docs/" + doc.id}>{doc.title}</a>
-            <button class="delete-btn" on:click|stopPropagation={() => deleteDoc(doc.id)}>x</button>
+            {#if $isAdmin}
+              <button class="delete-btn" on:click|stopPropagation={() => deleteDoc(doc.id)}>x</button>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -154,7 +158,8 @@
           class="doc-title"
           type="text"
           bind:value={activeDoc.title}
-          on:blur={handleTitleChange}
+          on:blur={$isAdmin ? handleTitleChange : undefined}
+          readonly={!$isAdmin}
           placeholder="Document title"
         />
         <div class="doc-link-section">
@@ -162,6 +167,7 @@
           <select
             id="doc-link"
             value={linkedItemKey}
+            disabled={!$isAdmin}
             on:change={(e) => {
               const value = e.target.value;
               if (!value) {
@@ -181,7 +187,7 @@
           </select>
         </div>
       </div>
-      <DocEditor content={activeDoc.content} onChange={handleContentChange} />
+      <DocEditor content={activeDoc.content} onChange={$isAdmin ? handleContentChange : () => {}} />
     {:else}
       <p class="placeholder">Select a document or create a new one.</p>
     {/if}

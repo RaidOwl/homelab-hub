@@ -10,6 +10,20 @@ export const miscStore = writable([]);
 export const activeDocId = writable(null);
 export const toasts = writable([]);
 
+// Auth stores — persisted to localStorage
+export const authToken = writable(localStorage.getItem("authToken") || null);
+export const isAdmin = writable(!!localStorage.getItem("authToken"));
+
+authToken.subscribe((val) => {
+  if (val) {
+    localStorage.setItem("authToken", val);
+    isAdmin.set(true);
+  } else {
+    localStorage.removeItem("authToken");
+    isAdmin.set(false);
+  }
+});
+
 let toastId = 0;
 export function addToast(message, type = "info") {
   const id = ++toastId;

@@ -5,6 +5,7 @@ from ..models import (
     db, Hardware, VM, AppService, Storage, Network, Misc, Share,
     NetworkMember, Relationship, MapLayout, MapEdge,
 )
+from ..auth import admin_required
 
 bp = Blueprint("map", __name__, url_prefix="/api/map")
 
@@ -226,6 +227,7 @@ def get_layout():
 
 
 @bp.route("/layout", methods=["PUT"])
+@admin_required
 def save_layout():
     """Bulk save node positions."""
     data = request.get_json()
@@ -255,6 +257,7 @@ def save_layout():
 
 
 @bp.route("/edges", methods=["POST"])
+@admin_required
 def create_edge():
     data = request.get_json()
     if not data:
@@ -273,6 +276,7 @@ def create_edge():
 
 
 @bp.route("/edges/<int:edge_id>", methods=["DELETE"])
+@admin_required
 def delete_edge(edge_id):
     edge = db.get_or_404(MapEdge, edge_id)
     db.session.delete(edge)

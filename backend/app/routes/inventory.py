@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from ..models import *
 from ..models.base import db
+from ..auth import admin_required
 import json
 
 bp = Blueprint('inventory', __name__, url_prefix='/inventory')
@@ -63,6 +64,7 @@ def export_database():
 
 
 @bp.route('/import', methods=['POST'])
+@admin_required
 def import_database():
     """Import data into the database"""
     try:

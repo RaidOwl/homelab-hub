@@ -1,8 +1,16 @@
+import { get as getStore } from "svelte/store";
+import { authToken } from "./stores.js";
+
 const BASE = "/api";
 
 async function request(path, options = {}) {
+  const token = getStore(authToken);
+  const headers = { "Content-Type": "application/json", ...options.headers };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers,
     ...options,
   });
   if (!res.ok) {

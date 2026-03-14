@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 
 from ..models import db, Document, Hardware, VM, AppService, Storage, Network, Misc
+from ..auth import admin_required
 
 bp = Blueprint("documents", __name__, url_prefix="/api/docs")
 
@@ -33,6 +34,7 @@ def get_doc(doc_id):
 
 
 @bp.route("", methods=["POST"])
+@admin_required
 def create_doc():
     data = request.get_json() or {}
     doc = Document(
@@ -47,6 +49,7 @@ def create_doc():
 
 
 @bp.route("/<int:doc_id>", methods=["PUT"])
+@admin_required
 def update_doc(doc_id):
     doc = db.get_or_404(Document, doc_id)
     data = request.get_json()
@@ -58,12 +61,15 @@ def update_doc(doc_id):
 
 
 @bp.route("/<int:doc_id>", methods=["DELETE"])
+@admin_required
 def delete_doc(doc_id):
     doc = db.get_or_404(Document, doc_id)
     # Orphan children to root level
     for child in doc.children:
         child.parent_id = None
     db.session.delete(doc)
+    db.session.commit()
+    return jsonify(message="Deleted"), 200
 
 
 @bp.route("/linkable-items", methods=["GET"])
@@ -126,11 +132,10 @@ def get_linkable_items():
         })
     
     return jsonify(data=items, count=len(items))
-    db.session.commit()
-    return jsonify(message="Deleted"), 200
 
 
 @bp.route("/<int:doc_id>/move", methods=["PATCH"])
+@admin_required
 def move_doc(doc_id):
     doc = db.get_or_404(Document, doc_id)
     data = request.get_json() or {}
