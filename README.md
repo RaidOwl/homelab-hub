@@ -11,20 +11,22 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 - **Export/Import** — Backup and restore your entire inventory with one-click JSON export/import
 - **Network Visualization** — Interactive graph map with depth-first layout showing relationships between infrastructure components (powered by Cytoscape.js)
 - **Tree View** — Hierarchical view of your infrastructure with collapsible nodes
-- **Documentation** — Hierarchical markdown-based docs with live preview and auto-save
+- **Documentation** — Hierarchical markdown-based docs with live preview, auto-save, and entity linking
 - **Sortable Tables** — Click column headers to sort inventory data ascending or descending
 - **Cross-Entity Search** — Filter and search across all inventory types from a single interface
 - **Modal Dialogs** — Clean, accessible modal forms for creating and editing entities
 - **Relationship Tracking** — Automatic and manual relationship mapping between entities
+- **Admin / Read-Only Access** — Public visitors get a read-only view; an admin password unlocks all write operations
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
+|-------|------------|
 | Frontend | Svelte 4, Vite 5, Cytoscape.js, ByteMD, Pico CSS |
 | Backend | Python 3.14, Flask 3, SQLAlchemy 2, Alembic |
 | Database | SQLite (default, configurable) |
-| Deployment | Docker, Docker Compose, Gunicorn || Platforms | Linux (x86_64, ARM64), macOS, Windows |
+| Deployment | Docker, Docker Compose, Gunicorn |
+| Platforms | Linux (x86_64, ARM64), macOS, Windows |
 ## Requirements
 
 - **Node.js 24+** (for frontend development)
@@ -60,6 +62,8 @@ services:
       - "8000:8000"
     volumes:
       - ./data:/data
+    environment:
+      - ADMIN_PASSWORD=your-secure-password
     restart: unless-stopped
 ```
 
@@ -404,7 +408,7 @@ Backup and restore your entire inventory data including hardware, VMs, apps, sto
 Use the Export/Import buttons in the application header:
 
 - **Export**: Click the "Export Data" button to download a `homelab-export.json` file with all your data
-- **Import**: Click the "Import Data" button, select a JSON file, and upload it to replace all existing data
+- **Import**: Click the "Import Data" button (admin login required), select a JSON file, and upload it to replace all existing data
 
 **Warning**: Importing will clear all existing data before restoring from the file. Always keep a backup export before performing an import.
 
@@ -465,16 +469,19 @@ All endpoints are prefixed with `/api/`.
 | Resource | Endpoints |
 |----------|-----------|
 | Health | `GET /api/health` |
-| Hardware | `GET/POST /api/hardware`, `GET/PUT/DELETE /api/hardware/:id` |
-| VMs | `GET/POST /api/vms`, `GET/PUT/DELETE /api/vms/:id` |
-| Apps | `GET/POST /api/apps`, `GET/PUT/DELETE /api/apps/:id` |
-| Storage | `GET/POST /api/storage`, `GET/PUT/DELETE /api/storage/:id` |
-| Shares | `GET/POST /api/shares`, `GET/PUT/DELETE /api/shares/:id` |
-| Networks | `GET/POST /api/networks`, `GET/PUT/DELETE /api/networks/:id` |
-| Misc | `GET/POST /api/misc`, `GET/PUT/DELETE /api/misc/:id` |
-| Documents | `GET/POST /api/docs`, `GET/PUT/DELETE /api/docs/:id`, `PATCH /api/docs/:id/move` |
-| Inventory | `GET /api/inventory`, `GET /api/inventory/search?q=`, `GET /api/inventory/export`, `POST /api/inventory/import` |
-| Map | `GET /api/map/graph`, `GET/PUT /api/map/layout`, `POST/DELETE /api/map/edges` |
+| Auth | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/status` |
+| Hardware | `GET /api/hardware`, `POST /api/hardware` \*, `GET/PUT/DELETE /api/hardware/:id` \* |
+| VMs | `GET /api/vms`, `POST /api/vms` \*, `GET/PUT/DELETE /api/vms/:id` \* |
+| Apps | `GET /api/apps`, `POST /api/apps` \*, `GET/PUT/DELETE /api/apps/:id` \* |
+| Storage | `GET /api/storage`, `POST /api/storage` \*, `GET/PUT/DELETE /api/storage/:id` \* |
+| Shares | `GET /api/shares`, `POST /api/shares` \*, `GET/PUT/DELETE /api/shares/:id` \* |
+| Networks | `GET /api/networks`, `POST /api/networks` \*, `GET/PUT/DELETE /api/networks/:id` \* |
+| Misc | `GET /api/misc`, `POST /api/misc` \*, `GET/PUT/DELETE /api/misc/:id` \* |
+| Documents | `GET /api/docs`, `POST /api/docs` \*, `GET /api/docs/:id`, `PUT/DELETE /api/docs/:id` \*, `PATCH /api/docs/:id/move` \* |
+| Inventory | `GET /inventory`, `GET /inventory/search?q=`, `GET /inventory/export`, `POST /inventory/import` \* |
+| Map | `GET /api/map/graph`, `GET /api/map/layout`, `PUT /api/map/layout` \*, `POST /api/map/edges` \*, `DELETE /api/map/edges/:id` \* |
+
+\* _Requires admin authentication (`Authorization: Bearer <token>`)_
 
 ## License
 
