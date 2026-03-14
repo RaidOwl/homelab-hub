@@ -273,6 +273,7 @@ export DATABASE_URL=sqlite:////data/homelab-hub/homelab-hub.db
 |----------|---------|-------------|
 | `DATABASE_URL` | `sqlite:///data/homelab-hub.db` | SQLAlchemy database URI |
 | `FLASK_ENV` | `production` | Flask environment (`production` or `development`) |
+| `ADMIN_PASSWORD` | `admin` | Password for admin write access |
 
 ### Data Backup
 
@@ -333,6 +334,66 @@ Note: The app also calls `db.create_all()` on startup as a fallback for fresh da
 |----------|---------|-------------|
 | `DATABASE_URL` | `sqlite:///data/homelab-hub.db` | SQLAlchemy database URI |
 | `FLASK_ENV` | `production` | Flask environment |
+| `ADMIN_PASSWORD` | `admin` | Password for admin write access |
+
+## Admin Access
+
+Home Lab Hub is **read-only by default** for all visitors. An admin user can log in to create, edit, and delete data.
+
+### Logging In
+
+Click the **Login** button in the top-right corner of the app and enter the admin password. Once logged in, an **Admin** badge appears and all write controls become available. Click **Logout** to return to read-only mode.
+
+### Setting the Password
+
+The admin password is set via the `ADMIN_PASSWORD` environment variable. If not set, it defaults to `admin` — **change this before exposing the app to a network**.
+
+**Docker Compose:**
+```yaml
+services:
+  homelab-hub:
+    image: raidowl/homelab-hub:latest
+    container_name: homelab-hub
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      - ADMIN_PASSWORD=your-secure-password
+    restart: unless-stopped
+```
+
+**Docker run:**
+```bash
+docker run -d \
+  --name homelab-hub \
+  -p 8000:8000 \
+  -v ./data:/data \
+  -e ADMIN_PASSWORD=your-secure-password \
+  --restart unless-stopped \
+  raidowl/homelab-hub:latest
+```
+
+**Non-Docker / systemd:** Add the variable to your service file or shell environment:
+```ini
+Environment="ADMIN_PASSWORD=your-secure-password"
+```
+
+### How the Password Is Stored
+
+The password is **not stored anywhere** — it is read directly from the environment variable at runtime each time a login attempt is made. No hashed or plaintext password is written to the database or disk.
+
+Login sessions are held as short-lived bearer tokens in server memory. Tokens are lost when the server restarts, requiring a fresh login after each restart.
+
+### Forgotten Password
+
+Because the password comes entirely from the environment variable, resetting it is straightforward:
+
+1. Update the `ADMIN_PASSWORD` environment variable to a new value.
+2. Restart the application (or container).
+3. Log in with the new password.
+
+No database changes or file edits are needed.
 
 ## Export & Import
 
