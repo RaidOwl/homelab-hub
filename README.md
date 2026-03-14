@@ -75,6 +75,28 @@ The application will be available at `http://localhost:8000`.
 
 Data is persisted in the `./data/` directory.
 
+## Dev / Pre-Release Builds
+
+Want to try new features before they land in `latest`? A `dev` image is published from the `dev` branch:
+
+```bash
+docker run -d \
+  --name homelab-hub-dev \
+  -p 8000:8000 \
+  -v ./data:/data \
+  -e ADMIN_PASSWORD=your-secure-password \
+  --restart unless-stopped \
+  raidowl/homelab-hub:dev
+```
+
+Or swap the tag in your `docker-compose.yml`:
+
+```yaml
+image: raidowl/homelab-hub:dev
+```
+
+> **Note:** The `dev` image may contain incomplete features, breaking changes, or bugs. It is not recommended for production use. Always back up your `./data/` directory before switching tags.
+
 ## Upgrading
 
 **Docker users:** Database migrations run automatically on container startup. To upgrade:
