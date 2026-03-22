@@ -395,6 +395,12 @@
           <span class="info-label">Loading...</span>
         </div>
       {:else if selectedNodeDetails}
+        {#if selectedNodeDetails.hardware_type}
+          <div class="info-item">
+            <span class="info-label">Hardware Type:</span>
+            <span class="info-value">{selectedNodeDetails.hardware_type.replace(/_/g, ' ')}</span>
+          </div>
+        {/if}
         {#if selectedNodeDetails.hostname}
           <div class="info-item">
             <span class="info-label">Hostname:</span>

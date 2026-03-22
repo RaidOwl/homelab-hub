@@ -6,6 +6,22 @@
 
 <div class="grid">
   <label>Name *<input type="text" bind:value={item.name} required /></label>
+  <label>
+    Type
+    <select bind:value={item.hardware_type}>
+      <option value="">Select type...</option>
+      <option value="server">Server</option>
+      <option value="switch">Switch</option>
+      <option value="router">Router</option>
+      <option value="firewall">Firewall</option>
+      <option value="access_point">Access Point</option>
+      <option value="nas">NAS</option>
+      <option value="ups">UPS</option>
+      <option value="other">Other</option>
+    </select>
+  </label>
+</div>
+<div class="grid">
   <label>Hostname<input type="text" bind:value={item.hostname} /></label>
 </div>
 <div class="grid">
