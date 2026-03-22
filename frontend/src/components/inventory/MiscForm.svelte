@@ -1,7 +1,15 @@
 <script>
   import IconPicker from "./IconPicker.svelte";
+  import MultiInput from "./MultiInput.svelte";
 
   export let item = {};
+
+  let ipAddresses = item.ip_address ? item.ip_address.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  function handleIpChange(e) {
+    ipAddresses = e.detail;
+    item.ip_address = ipAddresses.filter(Boolean).join(", ") || null;
+  }
 </script>
 
 <div class="grid">
@@ -10,7 +18,12 @@
 </div>
 <div class="grid">
   <label>Hostname<input type="text" bind:value={item.hostname} /></label>
-  <label>IP Address<input type="text" bind:value={item.ip_address} /></label>
+  <MultiInput
+    label="IP Addresses"
+    placeholder="e.g. 192.168.1.10"
+    values={ipAddresses}
+    on:change={handleIpChange}
+  />
 </div>
 <label>Description<textarea bind:value={item.description} rows="2"></textarea></label>
 <IconPicker bind:value={item.icon} />

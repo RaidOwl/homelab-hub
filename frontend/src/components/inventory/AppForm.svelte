@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { get } from "../../lib/api.js";
   import IconPicker from "./IconPicker.svelte";
+  import MultiInput from "./MultiInput.svelte";
 
   export let item = {};
 
@@ -10,6 +11,13 @@
   let parentType = item.vm_id ? "vm" : item.hardware_id ? "hardware" : "none";
   let previousHardwareId = item.hardware_id;
   let previousVmId = item.vm_id;
+
+  let ipAddresses = item.ip_address ? item.ip_address.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  function handleIpChange(e) {
+    ipAddresses = e.detail;
+    item.ip_address = ipAddresses.filter(Boolean).join(", ") || null;
+  }
 
   onMount(async () => {
     try {
@@ -34,15 +42,18 @@
     }
   }
 
-  // Auto-populate hostname and IP from parent only when creating a new app
+  // Auto-populate hostname and first IP from parent only when creating a new app
   $: if (!item.id && item.hardware_id && hardwareOptions.length > 0 && item.hardware_id !== previousHardwareId) {
     const hardware = hardwareOptions.find(h => h.id === item.hardware_id);
     if (hardware) {
       if (hardware.hostname && !item.hostname) {
         item.hostname = hardware.hostname;
       }
-      if (hardware.ip_address && !item.ip_address) {
-        item.ip_address = hardware.ip_address;
+      if (hardware.ip_address && ipAddresses.length === 0) {
+        // Take the first IP from the parent
+        const firstIp = hardware.ip_address.split(",")[0].trim();
+        ipAddresses = [firstIp];
+        item.ip_address = firstIp;
       }
     }
     previousHardwareId = item.hardware_id;
@@ -54,8 +65,10 @@
       if (vm.hostname && !item.hostname) {
         item.hostname = vm.hostname;
       }
-      if (vm.ip_address && !item.ip_address) {
-        item.ip_address = vm.ip_address;
+      if (vm.ip_address && ipAddresses.length === 0) {
+        const firstIp = vm.ip_address.split(",")[0].trim();
+        ipAddresses = [firstIp];
+        item.ip_address = firstIp;
       }
     }
     previousVmId = item.vm_id;
@@ -99,7 +112,12 @@
 <label>Description<input type="text" bind:value={item.description} /></label>
 <div class="grid">
   <label>Hostname<input type="text" bind:value={item.hostname} placeholder="Defaults to parent hostname" /></label>
-  <label>IP Address<input type="text" bind:value={item.ip_address} placeholder="Defaults to parent IP" /></label>
+  <MultiInput
+    label="IP Addresses"
+    placeholder="Defaults to parent IP"
+    values={ipAddresses}
+    on:change={handleIpChange}
+  />
 </div>
 <div class="grid">
   <label>External Hostname<input type="text" bind:value={item.external_hostname} /></label>

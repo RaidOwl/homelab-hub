@@ -165,15 +165,17 @@
               </div>
             {/if}
             {#if selectedNodeDetails.ip_address || selectedNodeDetails.ip}
+              {@const ips = (selectedNodeDetails.ip_address || selectedNodeDetails.ip || "").split(",").map(s => s.trim()).filter(Boolean)}
               <div class="info-item">
-                <span class="info-label">IP Address:</span>
-                <span class="info-value">{selectedNodeDetails.ip_address || selectedNodeDetails.ip}</span>
+                <span class="info-label">{ips.length > 1 ? "IP Addresses:" : "IP Address:"}</span>
+                <span class="info-value">{ips.join(", ")}</span>
               </div>
             {/if}
             {#if selectedNodeDetails.mac_address}
+              {@const macs = selectedNodeDetails.mac_address.split(",").map(s => s.trim()).filter(Boolean)}
               <div class="info-item">
-                <span class="info-label">MAC Address:</span>
-                <span class="info-value">{selectedNodeDetails.mac_address}</span>
+                <span class="info-label">{macs.length > 1 ? "MAC Addresses:" : "MAC Address:"}</span>
+                <span class="info-value">{macs.join(", ")}</span>
               </div>
             {/if}
             {#if selectedNodeDetails.os}
@@ -207,11 +209,12 @@
               </div>
             {/if}
             {#if selectedNode.type === 'apps' && selectedNodeDetails.port && (selectedNodeDetails.hostname || selectedNodeDetails.ip_address)}
+              {@const linkHost = selectedNodeDetails.hostname || (selectedNodeDetails.ip_address || "").split(",")[0].trim()}
               <div class="info-item">
                 <span class="info-label">Link:</span>
                 <span class="info-value">
-                  <a href="{selectedNodeDetails.https ? 'https' : 'http'}://{selectedNodeDetails.hostname || selectedNodeDetails.ip_address}:{selectedNodeDetails.port}" target="_blank" rel="noopener noreferrer">
-                    {selectedNodeDetails.hostname || selectedNodeDetails.ip_address}:{selectedNodeDetails.port}
+                  <a href="{selectedNodeDetails.https ? 'https' : 'http'}://{linkHost}:{selectedNodeDetails.port}" target="_blank" rel="noopener noreferrer">
+                    {linkHost}:{selectedNodeDetails.port}
                   </a>
                 </span>
               </div>

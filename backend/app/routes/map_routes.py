@@ -22,7 +22,7 @@ def get_network_for_ip(ip_addr):
     """Determine which network an IP address belongs to based on subnet matching."""
     if not ip_addr:
         return None
-    
+
     try:
         ip = ip_address(ip_addr)
         # Check all networks to see if this IP is in their subnet
@@ -36,8 +36,26 @@ def get_network_for_ip(ip_addr):
                     continue
     except (AddressValueError, ValueError):
         pass
-    
+
     return None
+
+
+def get_networks_for_ips(ip_field):
+    """Return all matching networks for a comma-separated IP address field."""
+    if not ip_field:
+        return []
+
+    seen_ids = set()
+    results = []
+    for single_ip in ip_field.split(","):
+        single_ip = single_ip.strip()
+        if not single_ip:
+            continue
+        network = get_network_for_ip(single_ip)
+        if network and network.id not in seen_ids:
+            seen_ids.add(network.id)
+            results.append(network)
+    return results
 
 
 @bp.route("/graph", methods=["GET"])
@@ -81,14 +99,20 @@ def get_graph():
                     node_data["icon"] = item.icon
                     node_data["label"] = item.icon  # Only show the icon
             
-            # Automatically determine network membership based on IP address
+            # Automatically determine network membership based on IP addresses
             if hasattr(item, "ip_address") and item.ip_address:
-                network = get_network_for_ip(item.ip_address)
-                if network:
-                    node_data["networkId"] = network.id
-                    node_data["networkName"] = network.name
-                    # Use network color or default if not set
-                    node_data["networkColor"] = network.color or "#E74C3C"
+                matched_networks = get_networks_for_ips(item.ip_address)
+                if matched_networks:
+                    # Primary network (first match) for border color
+                    node_data["networkId"] = matched_networks[0].id
+                    node_data["networkName"] = matched_networks[0].name
+                    node_data["networkColor"] = matched_networks[0].color or "#E74C3C"
+                    # All networks for the info panel
+                    if len(matched_networks) > 1:
+                        node_data["networks"] = [
+                            {"id": n.id, "name": n.name, "color": n.color or "#E74C3C"}
+                            for n in matched_networks
+                        ]
             
             nodes.append({"data": node_data})
 
@@ -153,11 +177,16 @@ def get_graph():
         
         # Add network membership if share has an IP
         if share.ip:
-            network = get_network_for_ip(share.ip)
-            if network:
-                node_data["networkId"] = network.id
-                node_data["networkName"] = network.name
-                node_data["networkColor"] = network.color or "#E74C3C"
+            matched_networks = get_networks_for_ips(share.ip)
+            if matched_networks:
+                node_data["networkId"] = matched_networks[0].id
+                node_data["networkName"] = matched_networks[0].name
+                node_data["networkColor"] = matched_networks[0].color or "#E74C3C"
+                if len(matched_networks) > 1:
+                    node_data["networks"] = [
+                        {"id": n.id, "name": n.name, "color": n.color or "#E74C3C"}
+                        for n in matched_networks
+                    ]
         
         nodes.append({"data": node_data})
         

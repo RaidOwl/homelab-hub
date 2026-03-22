@@ -43,11 +43,11 @@
           // Fetch grandparent (hardware or vm) details for default IP/hostname
           if (item.hardware_id) {
             const hwRes = await get(`/hardware/${item.hardware_id}`);
-            parentIp = hwRes.data.ip_address || '';
+            parentIp = (hwRes.data.ip_address || '').split(',')[0].trim();
             parentHostname = hwRes.data.hostname || '';
           } else if (item.vm_id) {
             const vmRes = await get(`/vms/${item.vm_id}`);
-            parentIp = vmRes.data.ip_address || '';
+            parentIp = (vmRes.data.ip_address || '').split(',')[0].trim();
             parentHostname = vmRes.data.hostname || '';
           }
         }
