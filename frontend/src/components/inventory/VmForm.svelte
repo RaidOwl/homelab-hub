@@ -2,10 +2,24 @@
   import { onMount } from "svelte";
   import { get } from "../../lib/api.js";
   import IconPicker from "./IconPicker.svelte";
+  import MultiInput from "./MultiInput.svelte";
 
   export let item = {};
 
   let hardwareOptions = [];
+
+  let ipAddresses = item.ip_address ? item.ip_address.split(",").map(s => s.trim()).filter(Boolean) : [];
+  let macAddresses = item.mac_address ? item.mac_address.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  function handleIpChange(e) {
+    ipAddresses = e.detail;
+    item.ip_address = ipAddresses.filter(Boolean).join(", ") || null;
+  }
+
+  function handleMacChange(e) {
+    macAddresses = e.detail;
+    item.mac_address = macAddresses.filter(Boolean).join(", ") || null;
+  }
 
   onMount(async () => {
     try {
@@ -31,11 +45,21 @@
 </div>
 <div class="grid">
   <label>Hostname<input type="text" bind:value={item.hostname} /></label>
-  <label>IP Address<input type="text" bind:value={item.ip_address} /></label>
+  <label>OS<input type="text" bind:value={item.os} /></label>
 </div>
 <div class="grid">
-  <label>MAC Address<input type="text" bind:value={item.mac_address} placeholder="00:00:00:00:00:00" /></label>
-  <label>OS<input type="text" bind:value={item.os} /></label>
+  <MultiInput
+    label="IP Addresses"
+    placeholder="e.g. 192.168.1.10"
+    values={ipAddresses}
+    on:change={handleIpChange}
+  />
+  <MultiInput
+    label="MAC Addresses"
+    placeholder="00:00:00:00:00:00"
+    values={macAddresses}
+    on:change={handleMacChange}
+  />
 </div>
 <div class="grid">
   <label>CPU Cores<input type="number" bind:value={item.cpu_cores} /></label>

@@ -402,16 +402,40 @@
           </div>
         {/if}
         {#if selectedNodeDetails.ip_address || selectedNodeDetails.ip}
-          <div class="info-item">
-            <span class="info-label">IP Address:</span>
-            <span class="info-value">{selectedNodeDetails.ip_address || selectedNodeDetails.ip}</span>
-          </div>
+          {@const ips = (selectedNodeDetails.ip_address || selectedNodeDetails.ip || "").split(",").map(s => s.trim()).filter(Boolean)}
+          {#if ips.length <= 1}
+            <div class="info-item">
+              <span class="info-label">IP Address:</span>
+              <span class="info-value">{ips[0] || ""}</span>
+            </div>
+          {:else}
+            <div class="info-item multi-value">
+              <span class="info-label">IP Addresses:</span>
+              <span class="info-value">
+                {#each ips as ip}
+                  <span class="value-chip">{ip}</span>
+                {/each}
+              </span>
+            </div>
+          {/if}
         {/if}
         {#if selectedNodeDetails.mac_address}
-          <div class="info-item">
-            <span class="info-label">MAC Address:</span>
-            <span class="info-value">{selectedNodeDetails.mac_address}</span>
-          </div>
+          {@const macs = selectedNodeDetails.mac_address.split(",").map(s => s.trim()).filter(Boolean)}
+          {#if macs.length <= 1}
+            <div class="info-item">
+              <span class="info-label">MAC Address:</span>
+              <span class="info-value">{macs[0] || ""}</span>
+            </div>
+          {:else}
+            <div class="info-item multi-value">
+              <span class="info-label">MAC Addresses:</span>
+              <span class="info-value">
+                {#each macs as mac}
+                  <span class="value-chip">{mac}</span>
+                {/each}
+              </span>
+            </div>
+          {/if}
         {/if}
         {#if selectedNodeDetails.os}
           <div class="info-item">
@@ -444,11 +468,12 @@
           </div>
         {/if}
         {#if selectedNode.type === 'apps' && selectedNodeDetails.port && (selectedNodeDetails.hostname || selectedNodeDetails.ip_address)}
+          {@const linkHost = selectedNodeDetails.hostname || (selectedNodeDetails.ip_address || "").split(",")[0].trim()}
           <div class="info-item">
             <span class="info-label">Link:</span>
             <span class="info-value">
-              <a href="{selectedNodeDetails.https ? 'https' : 'http'}://{selectedNodeDetails.hostname || selectedNodeDetails.ip_address}:{selectedNodeDetails.port}" target="_blank" rel="noopener noreferrer">
-                {selectedNodeDetails.hostname || selectedNodeDetails.ip_address}:{selectedNodeDetails.port}
+              <a href="{selectedNodeDetails.https ? 'https' : 'http'}://{linkHost}:{selectedNodeDetails.port}" target="_blank" rel="noopener noreferrer">
+                {linkHost}:{selectedNodeDetails.port}
               </a>
             </span>
           </div>
@@ -502,7 +527,19 @@
           </div>
         {/if}
       {/if}
-      {#if selectedNode.networkName}
+      {#if selectedNode.networks && selectedNode.networks.length > 1}
+        <div class="info-item multi-value">
+          <span class="info-label">Networks:</span>
+          <span class="info-value">
+            {#each selectedNode.networks as net}
+              <span class="network-chip">
+                <span class="network-indicator" style="background-color: {net.color}"></span>
+                {net.name}
+              </span>
+            {/each}
+          </span>
+        </div>
+      {:else if selectedNode.networkName}
         <div class="info-item">
           <span class="info-label">Network:</span>
           <span class="info-value">
@@ -820,6 +857,32 @@
   }
   .legend-item svg {
     flex-shrink: 0;
+  }
+  .info-item.multi-value {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  .info-item.multi-value .info-value {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .value-chip {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-family: monospace;
+  }
+  .network-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
   }
   .node-tooltip {
     position: absolute;
