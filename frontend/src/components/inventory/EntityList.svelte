@@ -30,7 +30,7 @@
   };
 
   const COLUMNS = {
-    hardware: ["name", "hostname", "ip_address", "os", "cpu", "ram_gb"],
+    hardware: ["name", "hardware_type", "hostname", "ip_address", "os", "cpu", "ram_gb"],
     vms: ["name", "hostname", "ip_address", "os", "cpu_cores", "ram_gb"],
     apps: ["name", "hostname", "ip_address", "external_hostname", "port"],
     storage: ["name", "storage_type", "raid_type", "raw_space_tb", "usable_space_tb"],
@@ -39,6 +39,7 @@
   };
 
   const LABELS = {
+    hardware_type: "Type",
     ip_address: "IP Address",
     ram_gb: "RAM (GB)",
     cpu_cores: "CPU Cores",
@@ -196,7 +197,7 @@
           {#each sorted as item (item.id)}
             <tr on:click={() => push(`/inventory/${type}/${item.id}`)} class="clickable">
               {#each columns as col}
-                <td>{item[col] ?? ""}</td>
+                <td>{col === 'hardware_type' && item[col] ? item[col].replace(/_/g, ' ') : item[col] ?? ""}</td>
               {/each}
               <td>
                 <div class="button-group">

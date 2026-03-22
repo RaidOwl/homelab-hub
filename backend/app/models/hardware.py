@@ -6,6 +6,7 @@ class Hardware(BaseMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
+    hardware_type = db.Column(db.Text)
     hostname = db.Column(db.Text)
     ip_address = db.Column(db.Text)
     mac_address = db.Column(db.Text)
