@@ -1,22 +1,12 @@
 <script>
-  const API_BASE = import.meta.env.PROD
-    ? ""
-    : import.meta.env.VITE_API_URL || "http://localhost:5001";
+  import { get, post } from "../lib/api.js";
+  import { addToast } from "../lib/stores.js";
 
   let importInput;
 
   async function exportDatabase() {
     try {
-      const response = await fetch(`${API_BASE}/inventory/export`, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await get("/inventory/export");
       const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: "application/json",
       });
@@ -28,9 +18,10 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      addToast("Export downloaded", "success");
     } catch (error) {
-      console.error("Export failed:", error);
-      alert("Export failed: " + error.message);
+      const msg = error instanceof Error ? error.message : String(error);
+      addToast(`Export failed: ${msg}`, "error");
     }
   }
 
@@ -42,21 +33,12 @@
       const text = await file.text();
       const data = JSON.parse(text);
 
-      const response = await fetch(`${API_BASE}/inventory/import`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      alert("Import completed successfully!");
+      await post("/inventory/import", data);
+      addToast("Import completed successfully!", "success");
       window.location.reload();
     } catch (error) {
-      console.error("Import failed:", error);
-      alert("Import failed: " + error.message);
+      const msg = error instanceof Error ? error.message : String(error);
+      addToast(`Import failed: ${msg}`, "error");
     } finally {
       event.target.value = "";
     }

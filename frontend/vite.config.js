@@ -50,5 +50,7 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    // MapPage pulls in cytoscape (~500k+ minified); lazy-loaded, not in the main chunk.
+    chunkSizeWarningLimit: 650,
   },
 });

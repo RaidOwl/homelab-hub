@@ -33,12 +33,12 @@
   </div>
   <ul class="nav-list">
     <li class="section">
-      <div 
-        class="section-header" 
+      <button
+        type="button"
+        class="section-header"
         class:active={isInventoryActive($location)}
         on:click={toggleInventory}
-        on:keydown={(e) => e.key === 'Enter' && toggleInventory()}
-        tabindex="0"
+        aria-expanded={inventoryExpanded}
       >
         <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span>
         <span class="section-title">Inventory</span>
@@ -49,7 +49,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           {/if}
         </span>
-      </div>
+      </button>
       {#if inventoryExpanded}
         <ul class="subsection">
           {#each inventoryTypes as type}
@@ -198,8 +198,10 @@
     gap: 0.5rem;
     padding: 0.6rem 1rem;
     color: var(--pico-muted-color, #aaa);
+    font: inherit;
     font-size: 1rem;
     font-weight: 700;
+    text-align: left;
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;

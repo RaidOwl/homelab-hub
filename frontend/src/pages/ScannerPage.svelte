@@ -136,7 +136,9 @@
         if (d.status === "expired") {
           stopDiscoverPoll();
           clearDiscoverResults();
-          addToast("Previous discovery expired. Start a new scan.", "info");
+          if (!opts.resume) {
+            addToast("Previous discovery expired. Start a new scan.", "info");
+          }
           return;
         }
         discoverProgress = d.progress ?? 0;
@@ -181,7 +183,9 @@
         if (d.status === "expired") {
           stopPortPoll();
           clearPortResults();
-          addToast("Previous port scan expired. Start a new scan.", "info");
+          if (!opts.resume) {
+            addToast("Previous port scan expired. Start a new scan.", "info");
+          }
           return;
         }
         portProgress = d.progress ?? 0;
