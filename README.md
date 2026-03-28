@@ -120,6 +120,23 @@ docker run -d \
 cp -r ./data ./data-backup-$(date +%Y%m%d)
 ```
 
+**Non-Docker users:** Use the included upgrade script from the project root:
+
+```bash
+cd /path/to/homelab-hub
+./upgrade.sh
+```
+
+The script will:
+1. Backup your `data/` directory (timestamped)
+2. Stop the systemd service (if active)
+3. Pull the latest code from git
+4. Update Python dependencies and run Alembic migrations
+5. Rebuild the frontend (`npm ci && npm run build`)
+6. Restart the service
+
+Pass `--branch <name>` to upgrade from a branch other than `main`.
+
 ## Non-Docker Deployment
 
 Deploy Home Lab Hub directly on your system without Docker containers.
@@ -130,6 +147,7 @@ Deploy Home Lab Hub directly on your system without Docker containers.
 - **Node.js 24+** 
 - **pip** (Python package manager)
 - **npm** (Node package manager)
+- **nmap** (for LAN/port scanning — `sudo apt install nmap` on Debian, `brew install nmap` on macOS)
 - A web server (Nginx/Apache, optional for reverse proxy)
 
 ### Step 1: Clone/Download the Repository
@@ -139,7 +157,19 @@ git clone https://github.com/raidowl/homelab-hub.git
 cd homelab-hub
 ```
 
-### Step 2: Backend Setup
+### Step 2: Install nmap
+
+nmap is required for LAN discovery and port scanning.
+
+```bash
+# Debian/Ubuntu:
+sudo apt update && sudo apt install -y nmap
+
+# macOS:
+brew install nmap
+```
+
+### Step 3: Backend Setup
 
 ```bash
 cd backend
@@ -157,7 +187,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Step 3: Frontend Setup & Build
+### Step 4: Frontend Setup & Build
 
 ```bash
 cd ../frontend
@@ -171,7 +201,7 @@ npm run build
 
 The built frontend will be in the `frontend/dist/` directory.
 
-### Step 4: Database Initialization
+### Step 5: Database Initialization
 
 From the `backend/` directory (with virtual environment activated):
 
@@ -182,7 +212,7 @@ alembic upgrade head
 
 The application will automatically create the SQLite database at `data/homelab-hub.db` on first run.
 
-### Step 5: Run the Application
+### Step 6: Run the Application
 
 #### Option A: Development (Single Process)
 
@@ -239,7 +269,7 @@ sudo ln -s /etc/nginx/sites-available/homelab-hub /etc/nginx/sites-enabled/
 sudo systemctl reload nginx
 ```
 
-### Step 6 (Optional): Auto-Start with Systemd
+### Step 7 (Optional): Auto-Start with Systemd
 
 Create a systemd service file for auto-start on boot.
 

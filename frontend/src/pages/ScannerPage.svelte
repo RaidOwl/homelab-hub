@@ -133,6 +133,12 @@
       try {
         const res = await get(`/scanner/status/${scanId}`);
         const d = res.data;
+        if (d.status === "expired") {
+          stopDiscoverPoll();
+          clearDiscoverResults();
+          addToast("Previous discovery expired. Start a new scan.", "info");
+          return;
+        }
         discoverProgress = d.progress ?? 0;
         discoverStatus = d.status;
         if (d.status === "failed") {
@@ -154,17 +160,10 @@
       } catch (e) {
         stopDiscoverPoll();
         const msg = e instanceof Error ? e.message : String(e);
-        const expired =
-          msg === "Unknown scan_id" || msg.includes("Unknown scan_id");
-        if (expired) {
-          clearDiscoverResults();
-          addToast("Previous discovery expired. Start a new scan.", "info");
-        } else {
-          discoverError = msg;
-          discoverStatus = "failed";
-          persistDiscover();
-          if (!opts.resume) addToast(msg, "error");
-        }
+        discoverError = msg;
+        discoverStatus = "failed";
+        persistDiscover();
+        if (!opts.resume) addToast(msg, "error");
       }
     }, 400);
   }
@@ -179,6 +178,12 @@
       try {
         const res = await get(`/scanner/status/${scanId}`);
         const d = res.data;
+        if (d.status === "expired") {
+          stopPortPoll();
+          clearPortResults();
+          addToast("Previous port scan expired. Start a new scan.", "info");
+          return;
+        }
         portProgress = d.progress ?? 0;
         portStatus = d.status;
         if (d.status === "failed") {
@@ -200,17 +205,10 @@
       } catch (e) {
         stopPortPoll();
         const msg = e instanceof Error ? e.message : String(e);
-        const expired =
-          msg === "Unknown scan_id" || msg.includes("Unknown scan_id");
-        if (expired) {
-          clearPortResults();
-          addToast("Previous port scan expired. Start a new scan.", "info");
-        } else {
-          portError = msg;
-          portStatus = "failed";
-          persistPortScan();
-          if (!opts.resume) addToast(msg, "error");
-        }
+        portError = msg;
+        portStatus = "failed";
+        persistPortScan();
+        if (!opts.resume) addToast(msg, "error");
       }
     }, 400);
   }

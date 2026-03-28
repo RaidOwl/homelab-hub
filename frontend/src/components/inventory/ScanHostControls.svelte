@@ -62,6 +62,13 @@
       const res = await get(`/scanner/status/${scanId}`);
       const d = res.data;
 
+      if (d.status === "expired") {
+        clearIdentifyPoll();
+        scanHostLoading = false;
+        addToast("Scan expired. Please try again.", "info");
+        return;
+      }
+
       if (d.status === "failed") {
         clearIdentifyPoll();
         scanHostLoading = false;

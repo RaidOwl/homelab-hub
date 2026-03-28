@@ -114,7 +114,14 @@ def post_probe_http():
 def get_status(scan_id: str):
     state = scan_manager.get_scan(scan_id)
     if state is None:
-        return jsonify(error="Unknown scan_id"), 404
+        return jsonify(data={
+            "scan_id": scan_id,
+            "status": "expired",
+            "progress": 0,
+            "results": [],
+            "error": None,
+            "params": {},
+        })
     return jsonify(data=state)
 
 

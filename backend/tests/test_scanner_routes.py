@@ -139,10 +139,14 @@ def test_status_returns_scan(client, mock_scan_manager):
     assert r.get_json()["data"]["status"] == "completed"
 
 
-def test_status_404_unknown(client, mock_scan_manager):
+def test_status_expired_for_unknown(client, mock_scan_manager):
     mock_scan_manager.get_scan.return_value = None
     r = client.get("/api/scanner/status/missing")
-    assert r.status_code == 404
+    assert r.status_code == 200
+    d = r.get_json()["data"]
+    assert d["status"] == "expired"
+    assert d["scan_id"] == "missing"
+    assert d["results"] == []
 
 
 def test_import_hardware_creates_and_skips_duplicate(app, client):
