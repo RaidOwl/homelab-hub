@@ -3,6 +3,8 @@
   import { get, post, put, del } from "../../lib/api.js";
   import { addToast } from "../../lib/stores.js";
   import HardwareForm from "./HardwareForm.svelte";
+  import ScanHostControls from "./ScanHostControls.svelte";
+  import ScanAppControls from "./ScanAppControls.svelte";
   import VmForm from "./VmForm.svelte";
   import AppForm from "./AppForm.svelte";
   import StorageForm from "./StorageForm.svelte";
@@ -20,6 +22,10 @@
   let shares = [];
   let parentIp = '';
   let parentHostname = '';
+  /** Resolved host IP for Scan App when app row has no ip_address */
+  let appParentIp = '';
+  let appParentIpCacheKey = '';
+  let appParentIpFetchSerial = 0;
 
   const FORMS = {
     hardware: HardwareForm,
@@ -31,6 +37,35 @@
   };
 
   $: FormComponent = FORMS[type];
+
+  async function loadAppParentIpForScan(hwId, vmId) {
+    const key = `${hwId ?? ""}|${vmId ?? ""}`;
+    if (key === appParentIpCacheKey) return;
+    appParentIpCacheKey = key;
+    appParentIp = "";
+    if (!hwId && !vmId) return;
+    const serial = ++appParentIpFetchSerial;
+    try {
+      let ip = "";
+      if (hwId) {
+        const hwRes = await get(`/hardware/${hwId}`);
+        ip = hwRes.data.ip_address || "";
+      } else if (vmId) {
+        const vmRes = await get(`/vms/${vmId}`);
+        ip = vmRes.data.ip_address || "";
+      }
+      if (serial === appParentIpFetchSerial) appParentIp = ip;
+    } catch {
+      if (serial === appParentIpFetchSerial) appParentIp = "";
+    }
+  }
+
+  $: if (type === "apps") {
+    void loadAppParentIpForScan(item.hardware_id, item.vm_id);
+  } else {
+    appParentIp = "";
+    appParentIpCacheKey = "";
+  }
 
   onMount(async () => {
     if (id) {
@@ -116,19 +151,19 @@
   <p aria-busy="true">Loading...</p>
 {:else}
   <form on:submit|preventDefault={handleSubmit}>
-    <h3>{id ? "Edit" : "New"} {type.charAt(0).toUpperCase() + type.slice(1).replace(/s$/, "")}</h3>
+    <div class="form-title-row">
+      <div class="form-title-cluster">
+        <h3>{id ? "Edit" : "New"} {type.charAt(0).toUpperCase() + type.slice(1).replace(/s$/, "")}</h3>
+        {#if type === "hardware"}
+          <ScanHostControls bind:item />
+        {:else if type === "apps"}
+          <ScanAppControls bind:item parentIp={appParentIp} />
+        {/if}
+      </div>
+      <button type="submit" class="header-submit">{id ? "Save" : "Create"}</button>
+    </div>
 
     <svelte:component this={FormComponent} bind:item />
-
-    <div class="form-actions">
-      <button type="submit">{id ? "Save" : "Create"}</button>
-      <button type="button" class="outline secondary" on:click={() => {
-        dispatch("cancel");
-        if (id) history.back();
-      }}>
-        Cancel
-      </button>
-    </div>
   </form>
   
   {#if type === 'storage' && id}
@@ -144,12 +179,46 @@
 {/if}
 
 <style>
-  .form-actions {
+  .form-title-row {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .form-title-cluster {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: 0.75rem 1.25rem;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .form-title-cluster h3 {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .header-submit {
+    width: 128px;
+    flex-shrink: 0;
+    margin-left: auto;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.65rem;
+    min-height: 0;
+    line-height: 1.25;
   }
   form {
     max-width: 700px;
+  }
+
+  @media (max-width: 767px) {
+    .form-title-row {
+      flex-wrap: wrap;
+    }
+    .form-title-row .form-title-cluster {
+      width: 100%;
+    }
   }
 </style>

@@ -12,6 +12,7 @@ def register_blueprints(app):
     from .misc import bp as misc_bp
     from .inventory import bp as inventory_bp
     from .map_routes import bp as map_bp
+    from .scanner import bp as scanner_bp
 
     app.register_blueprint(documents_bp)
     app.register_blueprint(hardware_bp)
@@ -23,3 +24,4 @@ def register_blueprints(app):
     app.register_blueprint(misc_bp)
     app.register_blueprint(inventory_bp)
     app.register_blueprint(map_bp)
+    app.register_blueprint(scanner_bp)

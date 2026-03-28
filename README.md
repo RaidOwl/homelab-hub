@@ -16,6 +16,7 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 - **Cross-Entity Search** — Filter and search across all inventory types from a single interface
 - **Modal Dialogs** — Clean, accessible modal forms for creating and editing entities
 - **Relationship Tracking** — Automatic and manual relationship mapping between entities
+- **LAN & Port Scanner** — Discover hosts on a subnet (nmap), import them as hardware, scan open TCP ports on a machine, and import services as apps (with optional HTTP header/title hints)
 
 ## Tech Stack
 
@@ -29,6 +30,7 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 
 - **Node.js 24+** (for frontend development)
 - **Python 3.14+** (for backend development)
+- **nmap** (for LAN/port scanning; included in the Docker image; install locally for dev, e.g. `brew install nmap` / `apt install nmap`)
 - **Docker** (optional, for containerized deployment)
 
 **Supported Platforms:**
@@ -40,24 +42,42 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 
 Works on x86_64, ARM64, and other supported platforms. Docker will automatically pull the correct image for your system.
 
+**Recommended (Linux):** use **host networking** so nmap can use the host’s LAN (ARP, OS fingerprinting, “Scan Host” in inventory). The app listens on **8000** on the host (no `-p` mapping).
+
 ```bash
 docker run -d \
   --name homelab-hub \
-  -p 8000:8000 \
+  --network host \
   -v ./data:/data \
   --restart unless-stopped \
   raidowl/homelab-hub:latest
 ```
 
-Or with Docker Compose — create a `docker-compose.yml`:
+Open `http://localhost:8000`.
+
+**Docker Desktop (macOS / Windows):** `network host` applies to the Linux VM, not your physical LAN; LAN scans and host identify may still be limited. For full LAN access from a Mac, run the backend natively (see Development) or deploy on Linux with host networking.
+
+**Bridge mode** (published port only; nmap sees the container network, not your LAN):
+
+```bash
+docker run -d \
+  --name homelab-hub \
+  -p 8000:8000 \
+  --cap-add=NET_RAW \
+  --cap-add=NET_ADMIN \
+  -v ./data:/data \
+  --restart unless-stopped \
+  raidowl/homelab-hub:latest
+```
+
+Or with Docker Compose (see repo [`docker-compose.yml`](docker-compose.yml)) — defaults to **host** networking:
 
 ```yaml
 services:
   homelab-hub:
     image: raidowl/homelab-hub:latest
     container_name: homelab-hub
-    ports:
-      - "8000:8000"
+    network_mode: host
     volumes:
       - ./data:/data
     restart: unless-stopped
@@ -67,7 +87,7 @@ services:
 docker compose up -d
 ```
 
-The application will be available at `http://localhost:8000`.
+With host networking, open `http://localhost:8000` on the host.
 
 Data is persisted in the `./data/` directory.
 
@@ -83,12 +103,12 @@ docker pull raidowl/homelab-hub:latest
 docker compose down
 docker compose up -d
 
-# Or if using docker run:
+# Or if using docker run (host network recommended on Linux for LAN scans):
 docker stop homelab-hub
 docker rm homelab-hub
 docker run -d \
   --name homelab-hub \
-  -p 8000:8000 \
+  --network host \
   -v ./data:/data \
   --restart unless-stopped \
   raidowl/homelab-hub:latest
@@ -303,6 +323,15 @@ python wsgi.py
 
 The API server runs on `http://localhost:5001`.
 
+### Tests
+
+From `backend/` with the virtualenv activated:
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
 ### Frontend
 
 ```bash
@@ -382,9 +411,12 @@ homelab-hub/
 ├── backend/
 │   ├── app/
 │   │   ├── models/       # SQLAlchemy models
-│   │   └── routes/       # Flask API blueprints
+│   │   ├── routes/       # Flask API blueprints
+│   │   └── services/     # Network scanner, scan job manager
 │   ├── migrations/       # Alembic migrations
+│   ├── tests/            # Pytest suite
 │   ├── requirements.txt
+│   ├── requirements-dev.txt
 │   └── wsgi.py
 ├── frontend/
 │   ├── src/
@@ -414,6 +446,7 @@ All endpoints are prefixed with `/api/`.
 | Documents | `GET/POST /api/docs`, `GET/PUT/DELETE /api/docs/:id`, `PATCH /api/docs/:id/move` |
 | Inventory | `GET /api/inventory`, `GET /api/inventory/search?q=`, `GET /api/inventory/export`, `POST /api/inventory/import` |
 | Map | `GET /api/map/graph`, `GET/PUT /api/map/layout`, `POST/DELETE /api/map/edges` |
+| Scanner | `GET /api/scanner/interfaces`, `POST /api/scanner/discover`, `POST /api/scanner/portscan`, `POST /api/scanner/identify`, `POST /api/scanner/probe-http`, `GET /api/scanner/status/:scanId`, `POST /api/scanner/import/hardware`, `POST /api/scanner/import/apps` |
 
 ## License
 

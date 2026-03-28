@@ -1,9 +1,15 @@
+# Bridge mode: publish 8000 so Docker Desktop (macOS/Windows) can reach the app on localhost.
+# nmap sees the container network, not the host LAN; use Linux + host network or native backend for full LAN scans.
 services:
   homelab-hub:
+    build: .
     image: raidowl/homelab-hub:latest
     container_name: homelab-hub
     ports:
       - "8000:8000"
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
     volumes:
       - ./data:/data
     restart: unless-stopped

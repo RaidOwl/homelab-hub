@@ -4,6 +4,8 @@
   import DocsPage from "./pages/DocsPage.svelte";
   import InventoryPage from "./pages/InventoryPage.svelte";
   import MapPage from "./pages/MapPage.svelte";
+  import ScannerPage from "./pages/ScannerPage.svelte";
+  import SettingsPage from "./pages/SettingsPage.svelte";
   import Toast from "./components/Toast.svelte";
 
   const routes = {
@@ -12,8 +14,10 @@
     "/inventory/:type": InventoryPage,
     "/inventory/:type/:id": InventoryPage,
     "/map": MapPage,
+    "/scanner": ScannerPage,
     "/docs": DocsPage,
     "/docs/:id": DocsPage,
+    "/settings": SettingsPage,
   };
 </script>
 
