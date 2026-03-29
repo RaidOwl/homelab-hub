@@ -239,9 +239,9 @@
     border-radius: 4px;
   }
   .editor-type-selector button.active {
-    background: var(--pico-primary-background, rgba(99, 102, 241, 0.15));
-    color: var(--pico-primary, #6366f1);
-    border-color: var(--pico-primary, #6366f1);
+    background-color: rgba(1, 114, 173, 1);
+    color: rgba(0, 0, 0, 1);
+    border-color: rgba(1, 114, 173, 1);
   }
   .editor-toolbar {
     display: flex;
@@ -255,7 +255,7 @@
     margin: 0;
     background: none;
     border: 1px solid var(--pico-muted-border-color, #333);
-    color: #ffffff;
+    color: rgba(255, 255, 255, 1);
     cursor: pointer;
   }
   .editor-toolbar button.active {
