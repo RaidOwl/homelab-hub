@@ -35,7 +35,7 @@ def create_app(config_class=Config):
     @app.route("/<path:path>")
     def serve_spa(path):
         # Skip API routes - they're handled by blueprints
-        api_prefixes = ("api/", "inventory/", "hardware/", "vms/", "apps/",
+        api_prefixes = ("api/", "hardware/", "vms/", "apps/",
                        "storage/", "shares/", "networks/", "misc/", "documents/", "map/", "scanner/")
         if path.startswith(api_prefixes):
             return jsonify(error="Not found"), 404

@@ -1,11 +1,7 @@
 const BASE = "/api";
 
-/** Inventory blueprint is mounted at `/inventory`, not under `/api`. */
 function resolveUrl(path) {
   const p = path.startsWith("/") ? path : `/${path}`;
-  if (p.startsWith("/inventory/")) {
-    return p;
-  }
   return `${BASE}${p}`;
 }
 

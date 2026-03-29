@@ -229,10 +229,10 @@ Access the application at `http://localhost:8000` (the built frontend files are 
 From the `backend/` directory, run Gunicorn:
 
 ```bash
-gunicorn -w 4 -b 127.0.0.1:5001 wsgi:app
+gunicorn -w 1 --threads 4 -b 127.0.0.1:5001 wsgi:app
 ```
 
-- `-w 4`: Number of worker processes (adjust based on CPU cores)
+- `-w 1 --threads 4`: One worker process with four request threads. Use a single process so the in-memory network scanner state is shared; threads still handle concurrent I/O-bound requests.
 - `-b 127.0.0.1:5001`: Bind to localhost on port 5001
 
 Then set up a reverse proxy (Nginx recommended):
@@ -286,7 +286,7 @@ User=homelab
 WorkingDirectory=/path/to/homelab-hub/backend
 Environment="FLASK_ENV=production"
 Environment="DATABASE_URL=sqlite:////path/to/homelab-hub/data/homelab-hub.db"
-ExecStart=/path/to/homelab-hub/backend/.venv/bin/gunicorn -w 4 -b 127.0.0.1:5001 wsgi:app
+ExecStart=/path/to/homelab-hub/backend/.venv/bin/gunicorn -w 1 --threads 4 -b 127.0.0.1:5001 wsgi:app
 Restart=on-failure
 RestartSec=10
 
@@ -412,12 +412,12 @@ You can also use the API endpoints directly:
 
 **Export:**
 ```bash
-curl -X GET http://localhost:5001/inventory/export -o export.json
+curl -X GET http://localhost:5001/api/inventory/export -o export.json
 ```
 
 **Import:**
 ```bash
-curl -X POST http://localhost:5001/inventory/import \
+curl -X POST http://localhost:5001/api/inventory/import \
      -H "Content-Type: application/json" \
      -d @export.json
 ```
@@ -425,11 +425,11 @@ curl -X POST http://localhost:5001/inventory/import \
 **Using with Docker:**
 ```bash
 # Export from running container
-docker exec -it <container_name> curl -X GET http://localhost:5001/inventory/export -o export.json
+docker exec -it <container_name> curl -X GET http://localhost:5001/api/inventory/export -o export.json
 
 # Import to a new container
 docker cp export.json <container_name>:/app/export.json
-docker exec -it <container_name> curl -X POST http://localhost:5001/inventory/import \
+docker exec -it <container_name> curl -X POST http://localhost:5001/api/inventory/import \
      -H "Content-Type: application/json" \
      -d @/app/export.json
 ```
