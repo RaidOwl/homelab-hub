@@ -4,6 +4,7 @@
   import { addToast } from "../../lib/stores.js";
   import Modal from "../Modal.svelte";
   import HardwareForm from "./HardwareForm.svelte";
+  import ScanHostControls from "./ScanHostControls.svelte";
   import VmForm from "./VmForm.svelte";
   import AppForm from "./AppForm.svelte";
   import StorageForm from "./StorageForm.svelte";
@@ -223,6 +224,11 @@
   on:close={handleModalClose}
 >
   <form on:submit|preventDefault={handleCreate}>
+    {#if type === "hardware"}
+      <div class="modal-hardware-scan">
+        <ScanHostControls bind:item={newItem} />
+      </div>
+    {/if}
     <svelte:component this={FormComponent} bind:item={newItem} />
     
     <div class="form-actions">
@@ -233,6 +239,9 @@
 </Modal>
 
 <style>
+  .modal-hardware-scan {
+    margin-bottom: 1rem;
+  }
   .list-header {
     display: flex;
     justify-content: space-between;

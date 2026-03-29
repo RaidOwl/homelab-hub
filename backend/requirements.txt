@@ -4,3 +4,5 @@ flask-sqlalchemy==3.1.1
 sqlalchemy==2.0.36
 alembic==1.14.1
 gunicorn==23.0.0
+python-nmap==0.7.1
+requests==2.32.3

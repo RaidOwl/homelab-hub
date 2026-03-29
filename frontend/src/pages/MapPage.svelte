@@ -84,7 +84,7 @@
   }
   .view-toggle button.active {
     background: var(--pico-primary-background, rgba(99, 102, 241, 0.2));
-    color: var(--pico-primary, #6366f1);
+    color: rgba(255, 255, 255, 1);
   }
   .view-toggle button:hover:not(.active) {
     background: var(--pico-secondary-hover-background, #3e3e4e);

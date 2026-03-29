@@ -3,7 +3,7 @@ from ..models import *
 from ..models.base import db
 import json
 
-bp = Blueprint('inventory', __name__, url_prefix='/inventory')
+bp = Blueprint('inventory', __name__, url_prefix='/api/inventory')
 
 ENTITY_MAP = {
     "hardware": Hardware,

@@ -170,6 +170,9 @@
   li.active {
     background: var(--pico-primary-background, rgba(99, 102, 241, 0.15));
   }
+  li.active a {
+    color: rgba(255, 255, 255, 1);
+  }
   li a {
     text-decoration: none;
     flex: 1;

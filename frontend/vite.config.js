@@ -10,10 +10,6 @@ export default defineConfig({
         target: "http://127.0.0.1:5001",
         changeOrigin: true,
       },
-      "/inventory": {
-        target: "http://127.0.0.1:5001",
-        changeOrigin: true,
-      },
       "/hardware": {
         target: "http://127.0.0.1:5001",
         changeOrigin: true,
@@ -50,5 +46,7 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    // MapPage pulls in cytoscape (~500k+ minified); lazy-loaded, not in the main chunk.
+    chunkSizeWarningLimit: 650,
   },
 });

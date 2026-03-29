@@ -1,7 +1,12 @@
 const BASE = "/api";
 
+function resolveUrl(path) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${BASE}${p}`;
+}
+
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(resolveUrl(path), {
     headers: { "Content-Type": "application/json", ...options.headers },
     ...options,
   });

@@ -12,6 +12,8 @@ RUN npm run build
 FROM python:3.14-alpine
 WORKDIR /app
 
+RUN apk add --no-cache nmap nmap-scripts
+
 COPY backend/requirements.txt .
 RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
     uv pip install --system --compile-bytecode --no-cache-dir -r requirements.txt

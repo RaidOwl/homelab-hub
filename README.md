@@ -16,6 +16,7 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 - **Cross-Entity Search** — Filter and search across all inventory types from a single interface
 - **Modal Dialogs** — Clean, accessible modal forms for creating and editing entities
 - **Relationship Tracking** — Automatic and manual relationship mapping between entities
+- **LAN & Port Scanner** — Discover hosts on a subnet (nmap), import them as hardware, scan open TCP ports on a machine, and import services as apps (with optional HTTP header/title hints)
 
 ## Tech Stack
 
@@ -29,6 +30,7 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 
 - **Node.js 24+** (for frontend development)
 - **Python 3.14+** (for backend development)
+- **nmap** (for LAN/port scanning; included in the Docker image; install locally for dev, e.g. `brew install nmap` / `apt install nmap`)
 - **Docker** (optional, for containerized deployment)
 
 **Supported Platforms:**
@@ -40,24 +42,42 @@ A self-hosted web application for managing and visualizing home lab infrastructu
 
 Works on x86_64, ARM64, and other supported platforms. Docker will automatically pull the correct image for your system.
 
+**Recommended (Linux):** use **host networking** so nmap can use the host’s LAN (ARP, OS fingerprinting, “Scan Host” in inventory). The app listens on **8000** on the host (no `-p` mapping).
+
 ```bash
 docker run -d \
   --name homelab-hub \
-  -p 8000:8000 \
+  --network host \
   -v ./data:/data \
   --restart unless-stopped \
   raidowl/homelab-hub:latest
 ```
 
-Or with Docker Compose — create a `docker-compose.yml`:
+Open `http://localhost:8000`.
+
+**Docker Desktop (macOS / Windows):** `network host` applies to the Linux VM, not your physical LAN; LAN scans and host identify may still be limited. For full LAN access from a Mac, run the backend natively (see Development) or deploy on Linux with host networking.
+
+**Bridge mode** (published port only; nmap sees the container network, not your LAN):
+
+```bash
+docker run -d \
+  --name homelab-hub \
+  -p 8000:8000 \
+  --cap-add=NET_RAW \
+  --cap-add=NET_ADMIN \
+  -v ./data:/data \
+  --restart unless-stopped \
+  raidowl/homelab-hub:latest
+```
+
+Or with Docker Compose (see repo [`docker-compose.yml`](docker-compose.yml)) — defaults to **host** networking:
 
 ```yaml
 services:
   homelab-hub:
     image: raidowl/homelab-hub:latest
     container_name: homelab-hub
-    ports:
-      - "8000:8000"
+    network_mode: host
     volumes:
       - ./data:/data
     restart: unless-stopped
@@ -67,7 +87,7 @@ services:
 docker compose up -d
 ```
 
-The application will be available at `http://localhost:8000`.
+With host networking, open `http://localhost:8000` on the host.
 
 Data is persisted in the `./data/` directory.
 
@@ -83,12 +103,12 @@ docker pull raidowl/homelab-hub:latest
 docker compose down
 docker compose up -d
 
-# Or if using docker run:
+# Or if using docker run (host network recommended on Linux for LAN scans):
 docker stop homelab-hub
 docker rm homelab-hub
 docker run -d \
   --name homelab-hub \
-  -p 8000:8000 \
+  --network host \
   -v ./data:/data \
   --restart unless-stopped \
   raidowl/homelab-hub:latest
@@ -100,6 +120,23 @@ docker run -d \
 cp -r ./data ./data-backup-$(date +%Y%m%d)
 ```
 
+**Non-Docker users:** Use the included upgrade script from the project root:
+
+```bash
+cd /path/to/homelab-hub
+./upgrade.sh
+```
+
+The script will:
+1. Backup your `data/` directory (timestamped)
+2. Stop the systemd service (if active)
+3. Pull the latest code from git
+4. Update Python dependencies and run Alembic migrations
+5. Rebuild the frontend (`npm ci && npm run build`)
+6. Restart the service
+
+Pass `--branch <name>` to upgrade from a branch other than `main`.
+
 ## Non-Docker Deployment
 
 Deploy Home Lab Hub directly on your system without Docker containers.
@@ -110,6 +147,7 @@ Deploy Home Lab Hub directly on your system without Docker containers.
 - **Node.js 24+** 
 - **pip** (Python package manager)
 - **npm** (Node package manager)
+- **nmap** (for LAN/port scanning — `sudo apt install nmap` on Debian, `brew install nmap` on macOS)
 - A web server (Nginx/Apache, optional for reverse proxy)
 
 ### Step 1: Clone/Download the Repository
@@ -119,7 +157,19 @@ git clone https://github.com/raidowl/homelab-hub.git
 cd homelab-hub
 ```
 
-### Step 2: Backend Setup
+### Step 2: Install nmap
+
+nmap is required for LAN discovery and port scanning.
+
+```bash
+# Debian/Ubuntu:
+sudo apt update && sudo apt install -y nmap
+
+# macOS:
+brew install nmap
+```
+
+### Step 3: Backend Setup
 
 ```bash
 cd backend
@@ -137,7 +187,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Step 3: Frontend Setup & Build
+### Step 4: Frontend Setup & Build
 
 ```bash
 cd ../frontend
@@ -151,7 +201,7 @@ npm run build
 
 The built frontend will be in the `frontend/dist/` directory.
 
-### Step 4: Database Initialization
+### Step 5: Database Initialization
 
 From the `backend/` directory (with virtual environment activated):
 
@@ -162,7 +212,7 @@ alembic upgrade head
 
 The application will automatically create the SQLite database at `data/homelab-hub.db` on first run.
 
-### Step 5: Run the Application
+### Step 6: Run the Application
 
 #### Option A: Development (Single Process)
 
@@ -179,10 +229,10 @@ Access the application at `http://localhost:8000` (the built frontend files are 
 From the `backend/` directory, run Gunicorn:
 
 ```bash
-gunicorn -w 4 -b 127.0.0.1:5001 wsgi:app
+gunicorn -w 1 --threads 4 -b 127.0.0.1:5001 wsgi:app
 ```
 
-- `-w 4`: Number of worker processes (adjust based on CPU cores)
+- `-w 1 --threads 4`: One worker process with four request threads. Use a single process so the in-memory network scanner state is shared; threads still handle concurrent I/O-bound requests.
 - `-b 127.0.0.1:5001`: Bind to localhost on port 5001
 
 Then set up a reverse proxy (Nginx recommended):
@@ -219,7 +269,7 @@ sudo ln -s /etc/nginx/sites-available/homelab-hub /etc/nginx/sites-enabled/
 sudo systemctl reload nginx
 ```
 
-### Step 6 (Optional): Auto-Start with Systemd
+### Step 7 (Optional): Auto-Start with Systemd
 
 Create a systemd service file for auto-start on boot.
 
@@ -236,7 +286,7 @@ User=homelab
 WorkingDirectory=/path/to/homelab-hub/backend
 Environment="FLASK_ENV=production"
 Environment="DATABASE_URL=sqlite:////path/to/homelab-hub/data/homelab-hub.db"
-ExecStart=/path/to/homelab-hub/backend/.venv/bin/gunicorn -w 4 -b 127.0.0.1:5001 wsgi:app
+ExecStart=/path/to/homelab-hub/backend/.venv/bin/gunicorn -w 1 --threads 4 -b 127.0.0.1:5001 wsgi:app
 Restart=on-failure
 RestartSec=10
 
@@ -303,6 +353,15 @@ python wsgi.py
 
 The API server runs on `http://localhost:5001`.
 
+### Tests
+
+From `backend/` with the virtualenv activated:
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
 ### Frontend
 
 ```bash
@@ -353,12 +412,12 @@ You can also use the API endpoints directly:
 
 **Export:**
 ```bash
-curl -X GET http://localhost:5001/inventory/export -o export.json
+curl -X GET http://localhost:5001/api/inventory/export -o export.json
 ```
 
 **Import:**
 ```bash
-curl -X POST http://localhost:5001/inventory/import \
+curl -X POST http://localhost:5001/api/inventory/import \
      -H "Content-Type: application/json" \
      -d @export.json
 ```
@@ -366,11 +425,11 @@ curl -X POST http://localhost:5001/inventory/import \
 **Using with Docker:**
 ```bash
 # Export from running container
-docker exec -it <container_name> curl -X GET http://localhost:5001/inventory/export -o export.json
+docker exec -it <container_name> curl -X GET http://localhost:5001/api/inventory/export -o export.json
 
 # Import to a new container
 docker cp export.json <container_name>:/app/export.json
-docker exec -it <container_name> curl -X POST http://localhost:5001/inventory/import \
+docker exec -it <container_name> curl -X POST http://localhost:5001/api/inventory/import \
      -H "Content-Type: application/json" \
      -d @/app/export.json
 ```
@@ -382,9 +441,12 @@ homelab-hub/
 ├── backend/
 │   ├── app/
 │   │   ├── models/       # SQLAlchemy models
-│   │   └── routes/       # Flask API blueprints
+│   │   ├── routes/       # Flask API blueprints
+│   │   └── services/     # Network scanner, scan job manager
 │   ├── migrations/       # Alembic migrations
+│   ├── tests/            # Pytest suite
 │   ├── requirements.txt
+│   ├── requirements-dev.txt
 │   └── wsgi.py
 ├── frontend/
 │   ├── src/
@@ -414,6 +476,7 @@ All endpoints are prefixed with `/api/`.
 | Documents | `GET/POST /api/docs`, `GET/PUT/DELETE /api/docs/:id`, `PATCH /api/docs/:id/move` |
 | Inventory | `GET /api/inventory`, `GET /api/inventory/search?q=`, `GET /api/inventory/export`, `POST /api/inventory/import` |
 | Map | `GET /api/map/graph`, `GET/PUT /api/map/layout`, `POST/DELETE /api/map/edges` |
+| Scanner | `GET /api/scanner/interfaces`, `POST /api/scanner/discover`, `POST /api/scanner/portscan`, `POST /api/scanner/identify`, `POST /api/scanner/probe-http`, `GET /api/scanner/status/:scanId`, `POST /api/scanner/import/hardware`, `POST /api/scanner/import/apps` |
 
 ## License
 
