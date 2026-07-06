@@ -7,17 +7,20 @@
 
   let hardwareOptions = [];
   let vmOptions = [];
-  let parentType = item.vm_id ? "vm" : item.hardware_id ? "hardware" : "none";
+  let lxcOptions = [];
+  let parentType = item.vm_id ? "vm" : item.lxc_id ? "lxc" : item.hardware_id ? "hardware" : "none";
 
   onMount(async () => {
     try {
-      const [hwRes, vmRes] = await Promise.all([get("/hardware"), get("/vms")]);
+      const [hwRes, vmRes, lxcRes] = await Promise.all([get("/hardware"), get("/vms"), get("/lxcs")]);
       hardwareOptions = hwRes.data;
       vmOptions = vmRes.data;
+      lxcOptions = lxcRes.data;
     } catch (e) {
       // ignore
     }
     if (item.vm_id) parentType = "vm";
+    else if (item.lxc_id) parentType = "lxc";
     else if (item.hardware_id) parentType = "hardware";
   });
 
@@ -25,10 +28,16 @@
     if (parentType === "none") {
       item.hardware_id = null;
       item.vm_id = null;
+      item.lxc_id = null;
     } else if (parentType === "hardware") {
       item.vm_id = null;
+      item.lxc_id = null;
     } else if (parentType === "vm") {
       item.hardware_id = null;
+      item.lxc_id = null;
+    } else if (parentType === "lxc") {
+      item.hardware_id = null;
+      item.vm_id = null;
     }
   }
 </script>
@@ -41,6 +50,7 @@
       <option value="none">Standalone</option>
       <option value="hardware">Hardware</option>
       <option value="vm">VM</option>
+      <option value="lxc">LXC</option>
     </select>
   </label>
 </div>
@@ -62,6 +72,16 @@
       <option value="">Select...</option>
       {#each vmOptions as vm}
         <option value={vm.id}>{vm.name}</option>
+      {/each}
+    </select>
+  </label>
+{:else if parentType === "lxc"}
+  <label>
+    LXC
+    <select bind:value={item.lxc_id}>
+      <option value="">Select...</option>
+      {#each lxcOptions as lxc}
+        <option value={lxc.id}>{lxc.name}</option>
       {/each}
     </select>
   </label>

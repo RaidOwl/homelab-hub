@@ -1,10 +1,11 @@
-from . import apps, documents, hardware, inventory, map_routes, misc, networks, shares, storage, vms
+from . import apps, documents, hardware, inventory, map_routes, misc, networks, shares, storage, vms, lxcs
 from flask import Blueprint
 
 def register_blueprints(app):
     from .documents import bp as documents_bp
     from .hardware import bp as hardware_bp
     from .vms import bp as vms_bp
+    from .lxcs import bp as lxcs_bp
     from .apps import bp as apps_bp
     from .storage import bp as storage_bp
     from .shares import bp as shares_bp
@@ -16,6 +17,7 @@ def register_blueprints(app):
     app.register_blueprint(documents_bp)
     app.register_blueprint(hardware_bp)
     app.register_blueprint(vms_bp)
+    app.register_blueprint(lxcs_bp)
     app.register_blueprint(apps_bp)
     app.register_blueprint(storage_bp)
     app.register_blueprint(shares_bp)

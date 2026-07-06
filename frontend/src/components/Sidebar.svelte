@@ -4,6 +4,7 @@
   const inventoryTypes = [
     { key: "hardware", label: "Hardware" },
     { key: "vms", label: "VMs" },
+    { key: "lxcs", label: "LXCs" },
     { key: "apps", label: "Apps" },
     { key: "storage", label: "Storage" },
     { key: "networks", label: "Networks" },

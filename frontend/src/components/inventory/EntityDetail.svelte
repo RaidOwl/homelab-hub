@@ -4,6 +4,7 @@
   import { addToast } from "../../lib/stores.js";
   import HardwareForm from "./HardwareForm.svelte";
   import VmForm from "./VmForm.svelte";
+  import LxcForm from "./LxcForm.svelte";
   import AppForm from "./AppForm.svelte";
   import StorageForm from "./StorageForm.svelte";
   import NetworkForm from "./NetworkForm.svelte";
@@ -24,6 +25,7 @@
   const FORMS = {
     hardware: HardwareForm,
     vms: VmForm,
+    lxcs: LxcForm,
     apps: AppForm,
     storage: StorageForm,
     networks: NetworkForm,

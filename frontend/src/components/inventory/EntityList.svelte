@@ -5,6 +5,7 @@
   import Modal from "../Modal.svelte";
   import HardwareForm from "./HardwareForm.svelte";
   import VmForm from "./VmForm.svelte";
+  import LxcForm from "./LxcForm.svelte";
   import AppForm from "./AppForm.svelte";
   import StorageForm from "./StorageForm.svelte";
   import NetworkForm from "./NetworkForm.svelte";
@@ -23,6 +24,7 @@
   const FORMS = {
     hardware: HardwareForm,
     vms: VmForm,
+    lxcs: LxcForm,
     apps: AppForm,
     storage: StorageForm,
     networks: NetworkForm,
@@ -32,6 +34,7 @@
   const COLUMNS = {
     hardware: ["name", "hostname", "ip_address", "os", "cpu", "ram_gb"],
     vms: ["name", "hostname", "ip_address", "os", "cpu_cores", "ram_gb"],
+    lxcs: ["name", "ctid", "hostname", "ip_address", "os", "cpu_cores", "ram_gb"],
     apps: ["name", "hostname", "ip_address", "external_hostname", "port"],
     storage: ["name", "storage_type", "raid_type", "raw_space_tb", "usable_space_tb"],
     networks: ["name", "vlan_id", "subnet", "gateway"],
@@ -48,6 +51,7 @@
     usable_space_tb: "Usable (TB)",
     storage_type: "Type",
     raid_type: "RAID",
+    ctid: "CT ID",
   };
 
   function label(col) {

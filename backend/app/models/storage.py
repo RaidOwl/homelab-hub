@@ -7,6 +7,7 @@ class Storage(BaseMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     hardware_id = db.Column(db.Integer, db.ForeignKey("hardware.id", ondelete="SET NULL"), nullable=True)
     vm_id = db.Column(db.Integer, db.ForeignKey("vms.id", ondelete="SET NULL"), nullable=True)
+    lxc_id = db.Column(db.Integer, db.ForeignKey("lxcs.id", ondelete="SET NULL"), nullable=True)
     name = db.Column(db.Text, nullable=False)
     storage_type = db.Column(db.Text)
     raid_type = db.Column(db.Text)
@@ -22,7 +23,7 @@ class Storage(BaseMixin, db.Model):
 
     __table_args__ = (
         db.CheckConstraint(
-            "NOT (hardware_id IS NOT NULL AND vm_id IS NOT NULL)",
+            "(CASE WHEN hardware_id IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN vm_id IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN lxc_id IS NOT NULL THEN 1 ELSE 0 END) <= 1",
             name="ck_storage_single_parent",
         ),
     )

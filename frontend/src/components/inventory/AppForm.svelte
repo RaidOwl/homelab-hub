@@ -7,19 +7,23 @@
 
   let hardwareOptions = [];
   let vmOptions = [];
-  let parentType = item.vm_id ? "vm" : item.hardware_id ? "hardware" : "none";
+  let lxcOptions = [];
+  let parentType = item.vm_id ? "vm" : item.lxc_id ? "lxc" : item.hardware_id ? "hardware" : "none";
   let previousHardwareId = item.hardware_id;
   let previousVmId = item.vm_id;
+  let previousLxcId = item.lxc_id;
 
   onMount(async () => {
     try {
-      const [hwRes, vmRes] = await Promise.all([get("/hardware"), get("/vms")]);
+      const [hwRes, vmRes, lxcRes] = await Promise.all([get("/hardware"), get("/vms"), get("/lxcs")]);
       hardwareOptions = hwRes.data;
       vmOptions = vmRes.data;
+      lxcOptions = lxcRes.data;
     } catch (e) {
       // ignore
     }
     if (item.vm_id) parentType = "vm";
+    else if (item.lxc_id) parentType = "lxc";
     else if (item.hardware_id) parentType = "hardware";
   });
 
@@ -27,10 +31,16 @@
     if (parentType === "none") {
       item.hardware_id = null;
       item.vm_id = null;
+      item.lxc_id = null;
     } else if (parentType === "hardware") {
       item.vm_id = null;
+      item.lxc_id = null;
     } else if (parentType === "vm") {
       item.hardware_id = null;
+      item.lxc_id = null;
+    } else if (parentType === "lxc") {
+      item.hardware_id = null;
+      item.vm_id = null;
     }
   }
 
@@ -60,6 +70,18 @@
     }
     previousVmId = item.vm_id;
   }
+  $: if (!item.id && item.lxc_id && lxcOptions.length > 0 && item.lxc_id !== previousLxcId) {
+    const lxc = lxcOptions.find(l => l.id === item.lxc_id);
+    if (lxc) {
+      if (lxc.hostname && !item.hostname) {
+        item.hostname = lxc.hostname;
+      }
+      if (lxc.ip_address && !item.ip_address) {
+        item.ip_address = lxc.ip_address;
+      }
+    }
+    previousLxcId = item.lxc_id;
+  }
 </script>
 
 <div class="grid">
@@ -70,6 +92,7 @@
       <option value="none">Standalone</option>
       <option value="hardware">Hardware (bare metal)</option>
       <option value="vm">VM</option>
+      <option value="lxc">LXC</option>
     </select>
   </label>
 </div>
@@ -91,6 +114,16 @@
       <option value="">Select...</option>
       {#each vmOptions as vm}
         <option value={vm.id}>{vm.name}</option>
+      {/each}
+    </select>
+  </label>
+{:else if parentType === "lxc"}
+  <label>
+    LXC
+    <select bind:value={item.lxc_id}>
+      <option value="">Select...</option>
+      {#each lxcOptions as lxc}
+        <option value={lxc.id}>{lxc.name}</option>
       {/each}
     </select>
   </label>

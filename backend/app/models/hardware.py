@@ -21,5 +21,6 @@ class Hardware(BaseMixin, db.Model):
     notes = db.Column(db.Text)
 
     vms = db.relationship("VM", backref="hardware", lazy="select")
+    lxcs = db.relationship("LXC", backref="hardware", lazy="select")
     apps = db.relationship("AppService", backref="hardware", lazy="select")
     storage_pools = db.relationship("Storage", backref="hardware", lazy="select")

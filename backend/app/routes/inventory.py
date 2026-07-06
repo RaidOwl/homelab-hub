@@ -8,6 +8,7 @@ bp = Blueprint('inventory', __name__, url_prefix='/inventory')
 ENTITY_MAP = {
     "hardware": Hardware,
     "vms": VM,
+    "lxcs": LXC,
     "apps": AppService,
     "storage": Storage,
     "networks": Network,
@@ -51,6 +52,7 @@ def export_database():
         data = {
             'hardware': [h.to_dict() for h in Hardware.query.all()],
             'vms': [vm.to_dict() for vm in VM.query.all()],
+            'lxcs': [lxc.to_dict() for lxc in LXC.query.all()],
             'apps': [app.to_dict() for app in AppService.query.all()],
             'storage': [s.to_dict() for s in Storage.query.all()],
             'networks': [n.to_dict() for n in Network.query.all()],
@@ -72,6 +74,7 @@ def import_database():
         db.session.query(Share).delete()  # Delete shares before storage
         db.session.query(AppService).delete()
         db.session.query(VM).delete()
+        db.session.query(LXC).delete()
         db.session.query(Hardware).delete()
         db.session.query(Storage).delete()
         db.session.query(Network).delete()
@@ -105,6 +108,14 @@ def import_database():
                 db.session.add(vm)
         
         db.session.flush()  # Get IDs for VMs
+
+        # Import LXCs (depends on hardware)
+        if 'lxcs' in import_data:
+            for item in import_data['lxcs']:
+                lxc = LXC(**clean_item(item))
+                db.session.add(lxc)
+
+        db.session.flush()  # Get IDs for LXCs
 
         # Import apps (depends on hardware and VMs)
         if 'apps' in import_data:
